@@ -6,10 +6,10 @@
   "permissions": [
     "activeTab",
     "scripting",
-    "sidePanel"
+    "sidePanel",
+    "tabs"
   ],
   "action": {
-    "default_popup": "popup.html",
     "default_title": "Page Analytics"
   },
   "side_panel": {

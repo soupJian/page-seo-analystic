@@ -1,3 +1,6 @@
+// 导入xlsx库
+import * as XLSX from "xlsx";
+
 // 侧边栏JavaScript逻辑
 class SidebarManager {
   constructor() {
@@ -7,14 +10,46 @@ class SidebarManager {
     this.allImages = [];
     this.allLinks = [];
     this.currentProductData = null;
+    this.port = null;
     this.init();
   }
 
   init() {
+    // 连接到background script
+    this.port = chrome.runtime.connect({ name: "sidebar" });
+
     // 监听来自background script的消息
+    this.port.onMessage.addListener(data => {
+      console.log("收到background消息:", data);
+      if (data.type === "SEO_DATA") {
+        console.log("收到SEO数据:", data.data);
+        this.displaySeoData(data.data);
+      } else if (data.type === "ANALYSIS_STARTED") {
+        console.log("分析开始:", data.message);
+        this.showAnalysisStatus(data.message);
+      } else if (data.type === "ANALYSIS_ERROR") {
+        console.log("分析错误:", data.error);
+        this.showAnalysisError(data.error);
+      } else if (data.type === "URL_CHANGED") {
+        console.log("URL变化:", data);
+        this.showUrlChangeNotification(data);
+      }
+    });
+
+    // 监听来自content script的直接消息（保持兼容性）
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.type === "SEO_DATA") {
+        console.log("收到SEO数据:", request.data);
         this.displaySeoData(request.data);
+      } else if (request.type === "ANALYSIS_STARTED") {
+        console.log("分析开始:", request.message);
+        this.showAnalysisStatus(request.message);
+      } else if (request.type === "ANALYSIS_ERROR") {
+        console.log("分析错误:", request.error);
+        this.showAnalysisError(request.error);
+      } else if (request.type === "URL_CHANGED") {
+        console.log("URL变化:", request);
+        this.showUrlChangeNotification(request);
       }
     });
 
@@ -26,6 +61,9 @@ class SidebarManager {
       window.close();
     });
 
+    // 添加手动分析按钮事件
+    this.addManualAnalysisButton();
+
     // 延迟添加导出按钮事件监听器
     setTimeout(() => {
       this.addExportEventListeners();
@@ -34,21 +72,38 @@ class SidebarManager {
 
   async requestSeoData(retryCount = 0) {
     try {
+      // 首先尝试从background script获取缓存数据
       const response = await chrome.runtime.sendMessage({
         action: "getSeoData",
       });
       if (response && response.data) {
         console.log("从background script获取到数据:", response.data);
         this.displaySeoData(response.data);
+        return;
+      }
+
+      console.log("background script中暂无数据");
+
+      // 如果没有缓存数据，直接触发content script分析
+      if (retryCount === 0) {
+        console.log("直接触发content script分析");
+        await this.triggerAnalysis();
+        // 触发分析后，给一些时间让分析完成，然后重试获取数据
+        setTimeout(() => {
+          this.requestSeoData(1);
+        }, 2000);
+        return;
+      }
+
+      // 如果没有数据且重试次数少于3次，则等待后重试
+      if (retryCount < 3) {
+        console.log(`等待1秒后重试 (${retryCount + 1}/3)`);
+        setTimeout(() => {
+          this.requestSeoData(retryCount + 1);
+        }, 1000);
       } else {
-        console.log("background script中暂无数据");
-        // 如果没有数据且重试次数少于3次，则等待后重试
-        if (retryCount < 3) {
-          console.log(`等待1秒后重试 (${retryCount + 1}/3)`);
-          setTimeout(() => {
-            this.requestSeoData(retryCount + 1);
-          }, 1000);
-        }
+        // 重试次数用完，显示错误信息
+        this.showAnalysisError("无法获取SEO数据，请刷新页面后重试");
       }
     } catch (error) {
       console.error("获取SEO数据失败:", error);
@@ -62,19 +117,123 @@ class SidebarManager {
     }
   }
 
+  async triggerAnalysis() {
+    try {
+      console.log("开始触发分析...");
+      // 获取当前活动标签页
+      const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      console.log("查询到标签页:", tabs.length);
+      if (tabs.length > 0) {
+        console.log("发送分析消息到标签页:", tabs[0].id, tabs[0].url);
+        const response = await chrome.tabs.sendMessage(tabs[0].id, {
+          action: "analyzePage",
+        });
+        console.log("content script响应:", response);
+      } else {
+        console.error("没有找到活动标签页");
+      }
+    } catch (error) {
+      console.error("触发分析失败:", error);
+    }
+  }
+
+  addManualAnalysisButton() {
+    // 在页面顶部添加手动分析按钮
+    const container = document.getElementById("content");
+    if (container) {
+      const buttonHtml = `
+        <div class="p-4 bg-blue-50 border-b border-blue-200">
+          <button id="manualAnalysisBtn" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            手动开始分析
+          </button>
+        </div>
+      `;
+      container.insertAdjacentHTML("afterbegin", buttonHtml);
+
+      // 添加点击事件
+      document
+        .getElementById("manualAnalysisBtn")
+        .addEventListener("click", () => {
+          console.log("手动触发分析按钮被点击");
+          this.triggerAnalysis();
+        });
+    }
+  }
+
+  showAnalysisStatus(message) {
+    const container = document.getElementById("content");
+    if (container) {
+      container.innerHTML = `
+        <div class="flex items-center justify-center h-64">
+          <div class="text-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p class="text-gray-600">${message}</p>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  showAnalysisError(error) {
+    const container = document.getElementById("content");
+    if (container) {
+      container.innerHTML = `
+        <div class="flex items-center justify-center h-64">
+          <div class="text-center">
+            <div class="text-red-500 text-4xl mb-4">⚠️</div>
+            <p class="text-red-600">分析失败: ${error}</p>
+            <button onclick="location.reload()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              重试
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  showUrlChangeNotification(data) {
+    const container = document.getElementById("content");
+    if (container) {
+      container.innerHTML = `
+        <div class="p-6">
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <h3 class="font-medium text-yellow-800 mb-2">页面URL已变化</h3>
+            <p class="text-sm text-yellow-700 mb-4">${data.message}</p>
+            <div class="space-y-2 text-sm">
+              <div><strong>新URL:</strong> <span class="text-green-600">${data.newUrl}</span></div>
+            </div>
+            <button onclick="chrome.runtime.sendMessage({action: 'analyzePage'})" 
+                    class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              重新分析
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  }
+
   displaySeoData(data) {
-    this.displayBasicInfo(data.basic);
-    this.displayMetaInfo(data.meta);
-    this.displayOpenGraphInfo(data.openGraph);
-    this.displayHeadingStructure(data.headings);
-    this.displayImageInfo(data.images);
-    this.displayLinksInfo(data.links);
+    console.log("开始显示SEO数据:", data);
+
+    // 直接调用各个显示方法，不需要重新创建DOM结构
+    this.displayBasicInfo(data.basicInfo);
+    this.displayMetaInfo(data.metaInfo);
+    this.displayOpenGraphInfo(data.openGraphInfo);
+    this.displayHeadingStructure(data.headingStructure);
+    this.displayImageInfo(data.imageInfo);
+    this.displayLinksInfo(data.linksInfo);
     this.displayStructuredDataInfo(data.structuredData);
-    this.displayAnalyticsInfo(data.analytics);
+    this.displayAnalyticsInfo(data.analyticsInfo);
     this.displayRecommendations(data.recommendations);
+
+    console.log("SEO数据显示完成");
   }
 
   displayBasicInfo(basic) {
+    console.log("显示基本信息:", basic);
     const container = document.getElementById("basicInfo");
     if (!container) {
       console.error("DOM element 'basicInfo' not found");
@@ -89,7 +248,7 @@ class SidebarManager {
           }" target="_blank" class="text-blue-600 hover:underline">${
       basic.url
     }</a></div>
-          <div><strong>语言:</strong> ${basic.language || "未设置"}</div>
+          <div><strong>语言:</strong> ${basic.lang || "未设置"}</div>
           <div><strong>字符集:</strong> ${basic.charset || "未设置"}</div>
           <div><strong>Logo:</strong> ${
             basic.logo
@@ -102,6 +261,7 @@ class SidebarManager {
   }
 
   displayMetaInfo(meta) {
+    console.log("显示Meta信息:", meta);
     const container = document.getElementById("metaInfo");
     if (!container) {
       console.error("DOM element 'metaInfo' not found");
@@ -128,6 +288,7 @@ class SidebarManager {
   }
 
   displayOpenGraphInfo(og) {
+    console.log("显示Open Graph信息:", og);
     const container = document.getElementById("openGraphInfo");
     if (!container) {
       console.error("DOM element 'openGraphInfo' not found");
@@ -136,20 +297,24 @@ class SidebarManager {
     container.innerHTML = `
       <div class="seo-content">
         <div class="grid grid-cols-1 gap-2">
-          <div><strong>Title:</strong> ${og.title || "未设置"}</div>
-          <div><strong>Description:</strong> ${og.description || "未设置"}</div>
+          <div><strong>Title:</strong> ${og["og:title"] || "未设置"}</div>
+          <div><strong>Description:</strong> ${
+            og["og:description"] || "未设置"
+          }</div>
           <div><strong>Image:</strong> ${
-            og.image
-              ? `<a href="${og.image}" target="_blank" class="text-blue-600 hover:underline">查看图片</a>`
+            og["og:image"]
+              ? `<a href="${og["og:image"]}" target="_blank" class="text-blue-600 hover:underline">查看图片</a>`
               : "未设置"
           }</div>
           <div><strong>URL:</strong> ${
-            og.url
-              ? `<a href="${og.url}" target="_blank" class="text-blue-600 hover:underline">${og.url}</a>`
+            og["og:url"]
+              ? `<a href="${og["og:url"]}" target="_blank" class="text-blue-600 hover:underline">${og["og:url"]}</a>`
               : "未设置"
           }</div>
-          <div><strong>Type:</strong> ${og.type || "未设置"}</div>
-          <div><strong>Site Name:</strong> ${og.siteName || "未设置"}</div>
+          <div><strong>Type:</strong> ${og["og:type"] || "未设置"}</div>
+          <div><strong>Site Name:</strong> ${
+            og["og:site_name"] || "未设置"
+          }</div>
         </div>
       </div>
     `;
@@ -163,12 +328,12 @@ class SidebarManager {
     }
 
     const headingColors = {
-      H1: "bg-red-100 text-red-800",
-      H2: "bg-orange-100 text-orange-800",
-      H3: "bg-yellow-100 text-yellow-800",
-      H4: "bg-green-100 text-green-800",
-      H5: "bg-blue-100 text-blue-800",
-      H6: "bg-purple-100 text-purple-800",
+      H1: "bg-red-100 text-red-800 border-l-4 border-red-500",
+      H2: "bg-orange-100 text-orange-800 border-l-4 border-orange-500",
+      H3: "bg-yellow-100 text-yellow-800 border-l-4 border-yellow-500",
+      H4: "bg-green-100 text-green-800 border-l-4 border-green-500",
+      H5: "bg-blue-100 text-blue-800 border-l-4 border-blue-500",
+      H6: "bg-purple-100 text-purple-800 border-l-4 border-purple-500",
     };
 
     if (!headings || headings.length === 0) {
@@ -182,13 +347,16 @@ class SidebarManager {
           ${headings
             .map(
               heading => `
-            <div class="flex items-center space-x-2">
-              <span class="px-2 py-1 rounded text-xs font-medium ${
-                headingColors[heading.tag] || "bg-gray-100 text-gray-800"
-              }">
+            <div class="flex items-start space-x-3 p-2 rounded-lg ${
+              headingColors[heading.tag] ||
+              "bg-gray-100 text-gray-800 border-l-4 border-gray-500"
+            }">
+              <span class="px-2 py-1 bg-white rounded text-xs font-bold shadow-sm">
                 ${heading.tag}
               </span>
-              <span class="text-sm">${heading.text}</span>
+              <span class="text-sm font-medium flex-1 leading-relaxed">${
+                heading.text
+              }</span>
             </div>
           `
             )
@@ -252,7 +420,7 @@ class SidebarManager {
                   <td class="border border-gray-200 px-2 py-1">
                     <img src="${img.src}" alt="${
                     img.alt || ""
-                  }" class="w-[100px] h-16 object-cover rounded">
+                  }" class="max-w-[100px] h-auto object-contain rounded">
                   </td>
                   <td class="border border-gray-200 px-2 py-1 text-xs">
                     <a href="${
@@ -367,7 +535,7 @@ class SidebarManager {
                     </a>
                   </td>
                   <td class="border border-gray-200 px-2 py-1 text-xs">
-                    <span class="px-2 py-1 rounded text-xs ${
+                    <span class="inline-block px-2 py-1 rounded text-xs whitespace-nowrap ${
                       link.isExternal
                         ? "bg-red-100 text-red-800"
                         : "bg-green-100 text-green-800"
@@ -394,41 +562,62 @@ class SidebarManager {
   }
 
   displayStructuredDataInfo(structuredData) {
+    console.log("显示结构化数据:", structuredData);
     const container = document.getElementById("structuredDataInfo");
     if (!container) {
       console.error("DOM element 'structuredDataInfo' not found");
       return;
     }
 
-    if (!structuredData || structuredData.allSchemas.length === 0) {
-      container.innerHTML = '<div class="seo-content">未找到结构化数据</div>';
+    if (!structuredData) {
+      console.log("没有结构化数据");
+      container.innerHTML =
+        '<div class="seo-content text-gray-500 text-center py-8">未找到结构化数据</div>';
       return;
     }
 
-    // 保存产品数据用于导出 - 从processedSchemas中获取第一个产品
+    if (!structuredData.allSchemas || structuredData.allSchemas.length === 0) {
+      console.log("allSchemas为空");
+      container.innerHTML =
+        '<div class="seo-content text-gray-500 text-center py-8">未找到结构化数据</div>';
+      return;
+    }
+
+    console.log("找到", structuredData.allSchemas.length, "个结构化数据");
+
+    // 保存产品数据用于导出
     const firstProduct = structuredData.processedSchemas.find(
       schema => schema.category === "Product"
     );
     this.currentProductData = firstProduct ? firstProduct.productInfo : null;
 
-    let html = `
-      <div class="space-y-4">
-        <div class="bg-blue-50 p-3 rounded">
-          <div class="text-sm font-medium text-blue-800">
-            发现 ${structuredData.allSchemas.length} 个JSON-LD结构化数据
-          </div>
-          <div class="text-xs text-blue-600 mt-1">
-            来自 ${
-              new Set(structuredData.allSchemas.map(s => s.scriptIndex)).size
-            } 个script标签
-          </div>
-        </div>
-    `;
-
     // 按类别分组显示
     const groupedSchemas = this.groupSchemasByCategory(
       structuredData.processedSchemas
     );
+    console.log("分组后的schemas:", groupedSchemas);
+
+    // 创建优雅的展示结构
+    let html = `
+      <div class="structured-data-container space-y-6">
+        <div class="summary-card bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold text-blue-600">${
+                Object.keys(groupedSchemas).length
+              }</div>
+              <div class="text-xs text-gray-500">种类型</div>
+            </div>
+          </div>
+        </div>
+    `;
 
     // 显示每个类别的数据
     Object.keys(groupedSchemas).forEach(category => {
@@ -436,8 +625,9 @@ class SidebarManager {
       html += this.renderSchemaCategory(category, schemas);
     });
 
-    html += "</div>";
+    html += `</div>`;
     container.innerHTML = html;
+    console.log("结构化数据显示完成");
   }
 
   groupSchemasByCategory(schemas) {
@@ -455,15 +645,26 @@ class SidebarManager {
     const categoryConfig = this.getCategoryConfig(category);
 
     let html = `
-      <div class="border-l-4 ${categoryConfig.borderColor} pl-4 mb-4">
-        <h3 class="font-medium ${categoryConfig.textColor} mb-2">
-          ${categoryConfig.icon} ${categoryConfig.title} (${schemas.length})
-        </h3>
-        <div class="space-y-3">
+      <div class="category-section bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="category-header bg-gradient-to-r ${categoryConfig.gradientFrom} ${categoryConfig.gradientTo} px-6 py-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="text-2xl">${categoryConfig.icon}</div>
+              <div>
+                <h3 class="text-lg font-semibold text-white">${categoryConfig.title}</h3>
+                <p class="text-sm text-white/80">${categoryConfig.description}</p>
+              </div>
+            </div>
+            <div class="bg-white/20 px-3 py-1 rounded-full">
+              <span class="text-white font-medium">${schemas.length}</span>
+            </div>
+          </div>
+        </div>
+        <div class="category-content p-6 space-y-4">
     `;
 
-    schemas.forEach(schema => {
-      html += this.renderSchema(schema, categoryConfig);
+    schemas.forEach((schema, index) => {
+      html += this.renderSchemaItem(schema, categoryConfig, index);
     });
 
     html += `
@@ -474,213 +675,389 @@ class SidebarManager {
     return html;
   }
 
+  renderSchemaItem(schema, categoryConfig, index) {
+    console.log("渲染schema:", schema);
+
+    let html = `
+      <div class="schema-item border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+        <div class="schema-header flex items-start justify-between mb-3">
+          <div class="flex-1">
+            <div class="flex items-center space-x-2 mb-2">
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                #${index + 1}
+              </span>
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                categoryConfig.badgeColor
+              }">
+                ${schema.schemaType}
+              </span>
+            </div>
+            <h4 class="text-lg font-semibold text-gray-800 mb-1">${
+              schema.name
+            }</h4>
+          </div>
+        </div>
+        <div class="schema-content">
+    `;
+
+    // 根据类别显示特定信息
+    if (schema.category === "Product" && schema.productInfo) {
+      html += this.renderProductCard(schema.productInfo);
+    } else if (schema.category === "Organization" && schema.organizationInfo) {
+      html += this.renderOrganizationCard(schema.organizationInfo);
+    } else if (schema.category === "Navigation") {
+      html += this.renderNavigationCard(schema.rawData);
+    } else {
+      html += this.renderGenericCard(schema.rawData);
+    }
+
+    html += `
+        </div>
+      </div>
+    `;
+
+    console.log("schema渲染完成");
+    return html;
+  }
+
   getCategoryConfig(category) {
     const configs = {
       Product: {
         icon: "🛍️",
         title: "产品信息",
-        borderColor: "border-green-400",
-        textColor: "text-green-800",
-        bgColor: "bg-green-50",
+        description: "电商产品的详细信息和价格",
+        gradientFrom: "from-green-500",
+        gradientTo: "to-emerald-600",
+        badgeColor: "bg-green-100 text-green-800",
       },
       Organization: {
         icon: "🏢",
-        title: "组织信息",
-        borderColor: "border-blue-400",
-        textColor: "text-blue-800",
-        bgColor: "bg-blue-50",
+        title: "组织机构",
+        description: "公司或组织的基本信息",
+        gradientFrom: "from-blue-500",
+        gradientTo: "to-blue-600",
+        badgeColor: "bg-blue-100 text-blue-800",
       },
       Navigation: {
         icon: "🧭",
-        title: "导航信息",
-        borderColor: "border-purple-400",
-        textColor: "text-purple-800",
-        bgColor: "bg-purple-50",
+        title: "导航面包屑",
+        description: "页面导航路径和层级结构",
+        gradientFrom: "from-purple-500",
+        gradientTo: "to-purple-600",
+        badgeColor: "bg-purple-100 text-purple-800",
       },
       Review: {
         icon: "⭐",
-        title: "评价信息",
-        borderColor: "border-yellow-400",
-        textColor: "text-yellow-800",
-        bgColor: "bg-yellow-50",
+        title: "评价评论",
+        description: "用户评价和评分信息",
+        gradientFrom: "from-yellow-500",
+        gradientTo: "to-orange-500",
+        badgeColor: "bg-yellow-100 text-yellow-800",
       },
       Event: {
         icon: "📅",
-        title: "事件信息",
-        borderColor: "border-red-400",
-        textColor: "text-red-800",
-        bgColor: "bg-red-50",
+        title: "活动事件",
+        description: "活动、会议或事件信息",
+        gradientFrom: "from-red-500",
+        gradientTo: "to-pink-500",
+        badgeColor: "bg-red-100 text-red-800",
       },
-      Content: {
-        icon: "📝",
-        title: "内容信息",
-        borderColor: "border-indigo-400",
-        textColor: "text-indigo-800",
-        bgColor: "bg-indigo-50",
+      Article: {
+        icon: "📰",
+        title: "文章内容",
+        description: "新闻文章或博客内容",
+        gradientFrom: "from-indigo-500",
+        gradientTo: "to-indigo-600",
+        badgeColor: "bg-indigo-100 text-indigo-800",
+      },
+      Business: {
+        icon: "🏪",
+        title: "本地商家",
+        description: "本地商家和服务信息",
+        gradientFrom: "from-teal-500",
+        gradientTo: "to-cyan-500",
+        badgeColor: "bg-teal-100 text-teal-800",
+      },
+      Website: {
+        icon: "🌐",
+        title: "网站信息",
+        description: "网站基本信息和描述",
+        gradientFrom: "from-gray-500",
+        gradientTo: "to-gray-600",
+        badgeColor: "bg-gray-100 text-gray-800",
       },
       Other: {
-        icon: "🔧",
-        title: "其他信息",
-        borderColor: "border-gray-400",
-        textColor: "text-gray-800",
-        bgColor: "bg-gray-50",
+        icon: "📋",
+        title: "其他类型",
+        description: "其他类型的结构化数据",
+        gradientFrom: "from-gray-400",
+        gradientTo: "to-gray-500",
+        badgeColor: "bg-gray-100 text-gray-800",
       },
     };
+
     return configs[category] || configs.Other;
   }
 
-  renderSchema(schema, categoryConfig) {
-    let html = `
-      <div class="${categoryConfig.bgColor} p-3 rounded text-sm border">
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <div class="font-medium text-gray-800">${schema.name}</div>
-            <div class="text-xs text-gray-600">
-              类型: ${schema.type.join(", ")} | 
-              脚本: ${schema.scriptIndex} | 
-              ID: ${schema.id}
+  renderProductCard(product) {
+    console.log("渲染产品卡片:", product);
+    return `
+      <div class="product-card bg-green-50 rounded-lg p-4 border border-green-200">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">产品名称:</span>
+              <span class="text-sm text-gray-800">${product.name || "-"}</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">品牌:</span>
+              <span class="text-sm text-gray-800">${product.brand || "-"}</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">SKU:</span>
+              <span class="text-sm font-mono text-blue-600">${
+                product.sku || "-"
+              }</span>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">描述:</span>
+              <span class="text-sm text-gray-800">${
+                product.description
+                  ? product.description.substring(0, 50) + "..."
+                  : "-"
+              }</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">类别:</span>
+              <span class="text-sm text-gray-800">${
+                product.category || "-"
+              }</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">GTIN:</span>
+              <span class="text-sm font-mono text-gray-600">${
+                product.gtin || "-"
+              }</span>
             </div>
           </div>
         </div>
-    `;
-
-    // 根据类别显示特定信息
-    if (schema.category === "Product" && schema.productInfo) {
-      html += this.renderProductInfo(schema.productInfo);
-    } else if (schema.category === "Organization" && schema.organizationInfo) {
-      html += this.renderOrganizationInfo(schema.organizationInfo);
-    } else {
-      // 显示原始数据的关键字段
-      html += this.renderBasicSchemaInfo(schema.rawData);
-    }
-
-    html += `</div>`;
-    return html;
-  }
-
-  renderProductInfo(product) {
-    let html = `
-      <div class="grid grid-cols-2 gap-2 mb-3">
-        <div><strong>名称:</strong> ${product.name || "-"}</div>
-        <div><strong>品牌:</strong> ${product.brand || "-"}</div>
-        <div><strong>SKU:</strong> <span class="font-mono text-blue-600">${
-          product.sku || "-"
-        }</span></div>
-        <div><strong>起始价格:</strong> ${
-          product.price
-            ? `<span class="text-green-600 font-semibold">${product.price} ${
-                product.priceCurrency || ""
-              }</span>`
-            : "-"
-        }</div>
-        <div><strong>价格范围:</strong> ${
-          product.priceRange
-            ? `<span class="text-green-600 font-semibold">${
-                product.priceRange
-              } ${product.priceCurrency || ""}</span>`
-            : "-"
-        }</div>
-        <div><strong>GTIN:</strong> <span class="font-mono">${
-          product.gtin || "-"
-        }</span></div>
-        <div><strong>MPN:</strong> <span class="font-mono">${
-          product.mpn || "-"
-        }</span></div>
-        <div><strong>商品状态:</strong> ${product.condition || "-"}</div>
-        <div><strong>类别:</strong> ${product.category || "-"}</div>
-        <div><strong>可用性:</strong> 
-          <span class="px-2 py-1 rounded text-xs ${
-            product.availabilityText === "有库存"
-              ? "bg-green-100 text-green-800"
-              : product.availabilityText === "无库存"
-              ? "bg-red-100 text-red-800"
-              : product.availabilityText === "预订"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-gray-100 text-gray-800"
-          }">
-            ${product.availabilityText || "-"}
-          </span>
-        </div>
-        <div><strong>评分:</strong> ${
-          product.rating
-            ? `<span class="text-yellow-600">⭐ ${product.rating}</span> ${
-                product.ratingScale ? `(${product.ratingScale})` : ""
-              } (${product.reviewCount || 0} 评论)`
-            : "-"
-        }</div>
+        ${
+          product.offers && product.offers.length > 0
+            ? `
+          <div class="mt-4 pt-4 border-t border-green-200">
+            <h5 class="text-sm font-medium text-gray-700 mb-2">优惠信息 (${
+              product.offers.length
+            })</h5>
+            <div class="space-y-2">
+              ${product.offers
+                .slice(0, 3)
+                .map(
+                  offer => `
+                <div class="bg-white p-2 rounded border border-green-300">
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600">${
+                      offer.seller || "默认销售商"
+                    }</span>
+                    <span class="font-medium text-green-600">${offer.price} ${
+                    offer.currency || ""
+                  }</span>
+                  </div>
+                  <div class="text-xs text-gray-500 mt-1">
+                    <span>可用性: ${offer.availability || "-"}</span>
+                    ${offer.validFrom ? ` | 有效期: ${offer.validFrom}` : ""}
+                  </div>
+                </div>
+              `
+                )
+                .join("")}
+              ${
+                product.offers.length > 3
+                  ? `<div class="text-xs text-gray-500">还有 ${
+                      product.offers.length - 3
+                    } 个优惠...</div>`
+                  : ""
+              }
+            </div>
+          </div>
+        `
+            : ""
+        }
       </div>
     `;
+  }
 
-    // 显示offers信息
-    if (product.offersDetails && product.offersDetails.length > 0) {
-      html += `
-        <div class="mt-3 border-t pt-3">
-          <div class="flex justify-between items-center mb-2">
-            <h4 class="font-medium text-gray-800">💰 销售选项 (${
-              product.offersDetails.length
-            })</h4>
-            <button id="exportOffers" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">
-              导出Excel
-            </button>
+  renderOrganizationCard(org) {
+    return `
+      <div class="organization-card bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">组织名称:</span>
+              <span class="text-sm text-gray-800">${org.name || "-"}</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">网站:</span>
+              <span class="text-sm text-blue-600">${org.url || "-"}</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">电话:</span>
+              <span class="text-sm text-gray-800">${org.telephone || "-"}</span>
+            </div>
           </div>
-          <div class="space-y-2 max-h-60 overflow-y-auto">
-            ${product.offersDetails
-              .map((offer, index) => this.renderOfferInfo(offer))
+          <div class="space-y-2">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">地址:</span>
+              <span class="text-sm text-gray-800">${org.address || "-"}</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">邮编:</span>
+              <span class="text-sm text-gray-800">${
+                org.postalCode || "-"
+              }</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-medium text-gray-600">国家:</span>
+              <span class="text-sm text-gray-800">${
+                org.addressCountry || "-"
+              }</span>
+            </div>
+          </div>
+        </div>
+        ${
+          org.description
+            ? `
+          <div class="mt-3 pt-3 border-t border-blue-200">
+            <div class="text-sm text-gray-700">${org.description}</div>
+          </div>
+        `
+            : ""
+        }
+      </div>
+    `;
+  }
+
+  renderNavigationCard(rawData) {
+    if (rawData.itemListElement && Array.isArray(rawData.itemListElement)) {
+      return `
+        <div class="navigation-card bg-purple-50 rounded-lg p-4 border border-purple-200">
+          <div class="flex items-center space-x-2 mb-3">
+            <span class="text-sm font-medium text-gray-600">导航路径:</span>
+            <span class="text-xs text-purple-600">${
+              rawData.itemListElement.length
+            } 层级</span>
+          </div>
+          <div class="breadcrumb-list space-y-2">
+            ${rawData.itemListElement
+              .map(
+                (item, index) => `
+              <div class="flex items-center space-x-2 text-sm">
+                <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">
+                  ${item.position || index + 1}
+                </span>
+                <span class="text-gray-800">${item.name || "-"}</span>
+                ${
+                  item.item
+                    ? `<span class="text-blue-600 text-xs">${item.item}</span>`
+                    : ""
+                }
+              </div>
+            `
+              )
               .join("")}
           </div>
         </div>
       `;
     }
+    return this.renderGenericCard(rawData);
+  }
 
-    return html;
+  renderGenericCard(rawData) {
+    const keyFields = [
+      "name",
+      "url",
+      "description",
+      "headline",
+      "title",
+      "text",
+      "datePublished",
+      "author",
+    ];
+    const displayFields = keyFields.filter(field => rawData[field]);
+
+    if (displayFields.length === 0) {
+      return `
+        <div class="generic-card bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div class="text-sm text-gray-500 text-center">暂无可显示的关键字段</div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="generic-card bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div class="grid grid-cols-1 gap-2">
+          ${displayFields
+            .map(field => {
+              const value =
+                typeof rawData[field] === "string"
+                  ? rawData[field].length > 100
+                    ? rawData[field].substring(0, 100) + "..."
+                    : rawData[field]
+                  : JSON.stringify(rawData[field]).substring(0, 100);
+              return `
+              <div class="flex items-start space-x-2">
+                <span class="text-sm font-medium text-gray-600 min-w-0 flex-shrink-0">${field}:</span>
+                <span class="text-sm text-gray-800 break-words">${value}</span>
+              </div>
+            `;
+            })
+            .join("")}
+        </div>
+      </div>
+    `;
   }
 
   renderOfferInfo(offer) {
     return `
-      <div class="bg-white p-3 rounded border text-xs border-l-4 ${
-        offer.availabilityText === "有库存"
-          ? "border-green-400"
-          : offer.availabilityText === "无库存"
-          ? "border-red-400"
-          : "border-yellow-400"
-      }">
+      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200 shadow-sm">
         <!-- 标题和价格区域 -->
-        <div class="flex justify-between items-start mb-2">
+        <div class="flex justify-between items-start mb-3">
           <div class="flex-1">
-            <div class="font-medium text-gray-800 mb-1">
-              ${offer.productName || `选项 ${offer.index}`}
+            <div class="font-semibold text-gray-900 mb-2">
+              ${offer.productName || `产品选项 ${offer.index}`}
             </div>
             ${
               offer.sku
-                ? `<div class="text-xs text-blue-600 font-mono">SKU: ${offer.sku}</div>`
+                ? `<div class="text-xs text-blue-700 font-mono bg-blue-100 px-2 py-1 rounded inline-block">SKU: ${offer.sku}</div>`
                 : ""
             }
-            <div class="mt-1">
-              <span class="px-2 py-1 rounded text-xs font-medium ${
+            <div class="mt-2">
+              <span class="inline-block px-3 py-1 rounded-full text-xs font-medium ${
                 offer.availabilityText === "有库存"
-                  ? "bg-green-100 text-green-800"
+                  ? "bg-green-100 text-green-800 border border-green-300"
                   : offer.availabilityText === "无库存"
-                  ? "bg-red-100 text-red-800"
+                  ? "bg-red-100 text-red-800 border border-red-300"
                   : offer.availabilityText === "预订"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : "bg-gray-100 text-gray-800"
+                  ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
+                  : "bg-gray-100 text-gray-800 border border-gray-300"
               }">
                 ${offer.availabilityText || "状态未知"}
               </span>
             </div>
           </div>
           <div class="text-right ml-4">
-            <div class="text-green-600 font-bold text-lg">${offer.price} ${
+            <div class="text-green-600 font-bold text-xl">${offer.price} ${
       offer.priceCurrency
     }</div>
             ${
               offer.originalPrice && offer.originalPrice !== offer.price
-                ? `<div class="text-gray-500 line-through text-xs">原价: ${offer.originalPrice}</div>`
+                ? `<div class="text-gray-500 line-through text-sm">原价: ${offer.originalPrice}</div>`
                 : ""
             }
             ${
               offer.discountPercentage
-                ? `<div class="text-red-500 text-xs font-medium">省${offer.discountPercentage}</div>`
+                ? `<div class="text-red-500 text-sm font-medium bg-red-50 px-2 py-1 rounded">省${offer.discountPercentage}</div>`
                 : ""
             }
           </div>
@@ -798,6 +1175,7 @@ class SidebarManager {
   }
 
   displayAnalyticsInfo(analytics) {
+    console.log("显示分析工具信息:", analytics);
     const container = document.getElementById("analyticsInfo");
     if (!container) {
       console.error("DOM element 'analyticsInfo' not found");
@@ -806,11 +1184,23 @@ class SidebarManager {
 
     const tools = [];
 
-    if (analytics.googleAnalytics) tools.push("Google Analytics");
-    if (analytics.googleTagManager) tools.push("Google Tag Manager");
-    if (analytics.facebookPixel) tools.push("Facebook Pixel");
-    if (analytics.hotjar) tools.push("Hotjar");
-    if (analytics.mixpanel) tools.push("Mixpanel");
+    // 如果analytics是数组（新格式）
+    if (Array.isArray(analytics)) {
+      analytics.forEach(tool => {
+        if (tool.detected) {
+          tools.push(tool.name);
+        }
+      });
+    } else if (analytics) {
+      // 兼容旧格式
+      if (analytics.googleAnalytics) tools.push("Google Analytics");
+      if (analytics.googleTagManager) tools.push("Google Tag Manager");
+      if (analytics.facebookPixel) tools.push("Facebook Pixel");
+      if (analytics.hotjar) tools.push("Hotjar");
+      if (analytics.mixpanel) tools.push("Mixpanel");
+    }
+
+    console.log("检测到的分析工具:", tools);
 
     container.innerHTML = `
       <div class="seo-content">
@@ -834,16 +1224,20 @@ class SidebarManager {
   }
 
   displayRecommendations(recommendations) {
-    const container = document.getElementById("recommendations");
+    console.log("显示优化建议:", recommendations);
+    const container = document.getElementById("recommendationsInfo");
     if (!container) {
-      console.error("DOM element 'recommendations' not found");
+      console.error("DOM element 'recommendationsInfo' not found");
       return;
     }
 
     if (!recommendations || recommendations.length === 0) {
+      console.log("没有优化建议");
       container.innerHTML = '<div class="seo-content">暂无优化建议</div>';
       return;
     }
+
+    console.log("找到", recommendations.length, "个优化建议");
 
     const priorityColors = {
       high: "border-red-400 bg-red-50 text-red-800",
@@ -860,23 +1254,14 @@ class SidebarManager {
             priorityColors[rec.priority] || priorityColors.medium
           } p-3 rounded">
             <div class="font-medium mb-1">${rec.title}</div>
-            <div class="text-sm mb-2">${rec.description}</div>
-            ${
-              rec.action
-                ? `<div class="text-xs"><strong>建议:</strong> ${rec.action}</div>`
-                : ""
-            }
-            ${
-              rec.link
-                ? `<div class="text-xs mt-1"><a href="${rec.link}" target="_blank" class="text-blue-600 hover:underline">了解更多</a></div>`
-                : ""
-            }
+            <div class="text-sm text-gray-600">${rec.description}</div>
           </div>
         `
           )
           .join("")}
       </div>
     `;
+    console.log("优化建议显示完成");
   }
 
   createPagination(type, currentPage, totalPages) {
