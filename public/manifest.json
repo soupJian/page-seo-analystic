@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "Page Analytics - SEO分析工具",
+  "version": "1.0.0",
+  "description": "分析网页SEO信息，提供优化建议，支持结构化数据分析和Excel导出",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "sidePanel",
+    "tabs"
+  ],
+  "action": {
+    "default_title": "Page Analytics - 点击打开SEO分析",
+    "default_icon": "icon.svg"
+  },
+  "side_panel": {
+    "default_path": "sidebar.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "sidebar.css"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "sidebar.html",
+        "sidebar.css",
+        "sidebar.js",
+        "icon.svg"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "icon.svg",
+    "48": "icon.svg",
+    "128": "icon.svg"
+  }
+}

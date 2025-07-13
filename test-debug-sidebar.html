@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>调试侧边栏 - SEO分析测试</title>
+  <meta name="description" content="这是一个测试页面，用于调试SEO分析工具的侧边栏功能">
+  <meta name="keywords" content="SEO, 分析, 测试, 调试">
+  <link rel="canonical" href="https://example.com/test-debug-sidebar">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="调试侧边栏测试页面">
+  <meta property="og:description" content="用于调试SEO分析工具侧边栏功能的测试页面">
+  <meta property="og:image" content="https://example.com/test-image.jpg">
+  <meta property="og:url" content="https://example.com/test-debug-sidebar">
+  <meta property="og:type" content="website">
+
+  <!-- 分析工具 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag () { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'GA_MEASUREMENT_ID');
+  </script>
+
+  <!-- 结构化数据 -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "调试侧边栏测试页面",
+    "description": "用于调试SEO分析工具侧边栏功能的测试页面",
+    "url": "https://example.com/test-debug-sidebar"
+  }
+  </script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .debug-info {
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px 0;
+    }
+
+    .test-image {
+      max-width: 200px;
+      height: auto;
+      margin: 10px;
+      border: 1px solid #ddd;
+    }
+
+    .test-links {
+      margin: 20px 0;
+    }
+
+    .test-links a {
+      display: block;
+      margin: 5px 0;
+      color: #0066cc;
+      text-decoration: none;
+    }
+
+    .test-links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>调试侧边栏功能测试</h1>
+
+  <div class="debug-info">
+    <h2>调试说明</h2>
+    <p>这个页面用于测试SEO分析工具的侧边栏功能。请按照以下步骤操作：</p>
+    <ol>
+      <li>确保Chrome扩展已安装并启用</li>
+      <li>打开Chrome开发者工具 (F12)</li>
+      <li>点击扩展图标打开侧边栏</li>
+      <li>查看控制台中的调试日志</li>
+      <li>检查侧边栏是否正确显示分析结果</li>
+    </ol>
+  </div>
+
+  <h2>页面内容测试</h2>
+  <p>这是一个包含各种SEO元素的测试页面，用于验证分析工具的功能。</p>
+
+  <h3>图片测试</h3>
+  <div>
+    <img src="https://via.placeholder.com/150x100/0066cc/ffffff?text=Test+Image+1" alt="测试图片1" class="test-image">
+    <img src="https://via.placeholder.com/200x150/cc6600/ffffff?text=Test+Image+2" alt="测试图片2" class="test-image">
+    <img src="https://via.placeholder.com/120x80/66cc00/ffffff?text=Test+Image+3" alt="" class="test-image">
+  </div>
+
+  <h3>链接测试</h3>
+  <div class="test-links">
+    <a href="https://example.com/page1" title="页面1">内部链接 - 页面1</a>
+    <a href="https://google.com" target="_blank" rel="noopener">外部链接 - Google</a>
+    <a href="mailto:test@example.com">邮件链接</a>
+    <a href="tel:+1234567890">电话链接</a>
+    <a href="#section1">锚点链接</a>
+  </div>
+
+  <h4>子标题测试</h4>
+  <p>这是一个四级标题，用于测试标题结构分析。</p>
+
+  <h5>五级标题</h5>
+  <p>这是一个五级标题的内容。</p>
+
+  <h6>六级标题</h6>
+  <p>这是一个六级标题的内容。</p>
+
+  <div id="section1">
+    <h2>锚点目标区域</h2>
+    <p>这是锚点链接的目标区域。</p>
+  </div>
+
+  <script>
+    // 添加一些页面交互
+    console.log('测试页面已加载');
+
+    // 模拟用户交互
+    document.addEventListener('DOMContentLoaded', function () {
+      console.log('DOM已加载完成');
+
+      // 添加点击事件监听
+      document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', function (e) {
+          console.log('链接点击:', this.href);
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>
