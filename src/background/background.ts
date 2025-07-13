@@ -243,6 +243,18 @@ class BackgroundManager {
                 type: "SEO_DATA",
                 data: cachedData
               });
+            } else {
+              // 如果没有缓存数据，请求content script分析页面
+              console.log(`标签页 ${tabId} 没有缓存数据，请求content script分析`);
+              chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
+                if (chrome.runtime.lastError) {
+                  console.error('请求分析页面失败:', chrome.runtime.lastError);
+                  this.sendToSidebar(tabId, {
+                    type: "ANALYSIS_ERROR",
+                    error: "无法连接到页面内容脚本，请刷新页面重试"
+                  });
+                }
+              });
             }
           }
         });

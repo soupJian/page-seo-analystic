@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>测试页面 - 修复后的通信</title>
+  <meta name="description" content="这是一个测试页面，用于验证Chrome扩展的SEO分析功能是否正常工作">
+  <meta name="keywords" content="SEO, 测试, Chrome扩展, 分析工具">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="SEO分析工具">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="测试页面 - 修复后的通信">
+  <meta property="og:description" content="这是一个测试页面，用于验证Chrome扩展的SEO分析功能">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://example.com/test-fixed-communication">
+  <meta property="og:image" content="https://example.com/images/test-image.jpg">
+  <meta property="og:site_name" content="SEO测试站点">
+
+  <!-- 结构化数据 -->
+  <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "测试页面 - 修复后的通信",
+        "description": "这是一个测试页面，用于验证Chrome扩展的SEO分析功能",
+        "url": "https://example.com/test-fixed-communication",
+        "mainEntity": {
+            "@type": "Article",
+            "headline": "Chrome扩展SEO分析工具测试",
+            "author": {
+                "@type": "Person",
+                "name": "SEO分析工具"
+            },
+            "datePublished": "2024-01-01",
+            "dateModified": "2024-01-01"
+        }
+    }
+    </script>
+
+  <!-- 分析工具脚本 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag () { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'GA_MEASUREMENT_ID');
+  </script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .test-image {
+      max-width: 200px;
+      height: auto;
+      margin: 10px;
+    }
+
+    .test-link {
+      display: inline-block;
+      margin: 5px;
+      padding: 8px 12px;
+      background: #007cba;
+      color: white;
+      text-decoration: none;
+      border-radius: 3px;
+    }
+
+    .test-link:hover {
+      background: #005a87;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>测试页面 - 修复后的通信</h1>
+
+  <div class="test-section">
+    <h2>页面基本信息</h2>
+    <p>这是一个测试页面，用于验证Chrome扩展的SEO分析功能是否正常工作。</p>
+    <p>当前时间：<span id="current-time"></span></p>
+  </div>
+
+  <div class="test-section">
+    <h2>标题结构测试</h2>
+    <h3>这是H3标题</h3>
+    <p>H3标题下的内容</p>
+    <h4>这是H4标题</h4>
+    <p>H4标题下的内容</p>
+    <h5>这是H5标题</h5>
+    <p>H5标题下的内容</p>
+  </div>
+
+  <div class="test-section">
+    <h2>图片测试</h2>
+    <img src="https://via.placeholder.com/300x200/0066cc/ffffff?text=测试图片1" alt="测试图片1 - 蓝色背景" class="test-image">
+    <img src="https://via.placeholder.com/250x150/ff6600/ffffff?text=测试图片2" alt="测试图片2 - 橙色背景" class="test-image">
+    <img src="https://via.placeholder.com/200x200/009900/ffffff?text=测试图片3" alt="" class="test-image">
+  </div>
+
+  <div class="test-section">
+    <h2>链接测试</h2>
+    <a href="https://www.google.com" class="test-link" target="_blank" rel="noopener">外部链接 - Google</a>
+    <a href="https://www.github.com" class="test-link" target="_blank" rel="noopener">外部链接 - GitHub</a>
+    <a href="/internal-page" class="test-link">内部链接</a>
+    <a href="mailto:test@example.com" class="test-link">邮件链接</a>
+    <a href="tel:+1234567890" class="test-link">电话链接</a>
+  </div>
+
+  <div class="test-section">
+    <h2>拼写检查测试</h2>
+    <p>这段文本包含一些拼写错误的单词：recieve（应该是receive）、seperate（应该是separate）、occured（应该是occurred）。</p>
+    <p>The quik brown fox jumps over the lazy dog. This sentance contains several mispelled words.</p>
+  </div>
+
+  <div class="test-section">
+    <h2>通信状态检查</h2>
+    <p>请点击Chrome扩展图标，检查侧边栏是否能正常显示分析数据。</p>
+    <p>预期结果：</p>
+    <ul>
+      <li>侧边栏应该显示加载状态</li>
+      <li>然后显示完整的SEO分析数据</li>
+      <li>不应该显示"正在分析中"或连接错误</li>
+    </ul>
+  </div>
+
+  <script>
+    // 更新当前时间
+    function updateTime () {
+      const now = new Date();
+      document.getElementById('current-time').textContent = now.toLocaleString();
+    }
+
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // 添加一些动态内容以测试实时分析
+    setTimeout(() => {
+      const newSection = document.createElement('div');
+      newSection.className = 'test-section';
+      newSection.innerHTML = '<h2>动态添加的内容</h2><p>这是通过JavaScript动态添加的内容，用于测试实时分析功能。</p>';
+      document.body.appendChild(newSection);
+    }, 3000);
+  </script>
+</body>
+
+</html>

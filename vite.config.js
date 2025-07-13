@@ -22,6 +22,13 @@ export default defineConfig({
     },
     outDir: "dist",
     emptyOutDir: true,
+    minify: "terser",
+    terserOptions: {
+      mangle: {
+        // 保留类名不被压缩
+        reserved: ["PageAnalyzer", "SidebarManager", "BackgroundManager"],
+      },
+    },
   },
   publicDir: "public",
 });

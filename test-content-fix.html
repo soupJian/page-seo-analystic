@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO分析工具测试页面</title>
+  <meta name="description" content="这是一个用于测试SEO分析工具的页面">
+  <meta name="keywords" content="SEO, 测试, 分析工具">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 10px;
+    }
+
+    h2 {
+      color: #555;
+      margin-top: 30px;
+    }
+
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-left: 4px solid #007bff;
+    }
+
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #b8daff;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    pre {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+
+    img {
+      max-width: 100px;
+      height: auto;
+      margin: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>SEO分析工具测试页面</h1>
+
+    <div class="test-section">
+      <h2>📊 Content Script 状态检查</h2>
+      <div id="contentScriptStatus" class="status info">
+        正在检查 Content Script 状态...
+      </div>
+      <button onclick="checkContentScript()">重新检查</button>
+    </div>
+
+    <div class="test-section">
+      <h2>🔍 页面分析测试</h2>
+      <div id="analysisStatus" class="status info">
+        点击按钮开始分析页面...
+      </div>
+      <button onclick="runAnalysis()">开始分析</button>
+      <button onclick="clearResults()">清除结果</button>
+    </div>
+
+    <div class="test-section">
+      <h2>📋 分析结果</h2>
+      <div id="analysisResults"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>🖼️ 测试图片</h2>
+      <img
+        src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwN2JmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TG9nbzwvdGV4dD48L3N2Zz4="
+        alt="测试Logo">
+      <img
+        src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzI4YTc0NSIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+SW1hZ2U8L3RleHQ+PC9zdmc+"
+        alt="测试图片">
+      <img
+        src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNjUwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Tm8gQWx0PC90ZXh0Pjwvc3ZnPg==">
+    </div>
+
+    <div class="test-section">
+      <h2>🔗 测试链接</h2>
+      <p>
+        <a href="#section1">内部锚点链接</a> |
+        <a href="/">内部链接</a> |
+        <a href="https://www.google.com" target="_blank">外部链接</a> |
+        <a href="mailto:test@example.com">邮件链接</a> |
+        <a href="tel:+1234567890">电话链接</a>
+      </p>
+    </div>
+
+    <h2 id="section1">📝 内容区域</h2>
+    <p>这是一个测试段落，包含一些可能的拼写错误：recieve、seperate、occured。</p>
+    <p>这个页面用于测试SEO分析工具的各种功能，包括基本信息提取、Meta信息分析、图片分析、链接分析等。</p>
+
+    <h3>结构化数据测试</h3>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "SEO分析工具测试页面",
+            "description": "这是一个用于测试SEO分析工具的页面",
+            "url": "https://example.com/test"
+        }
+        </script>
+  </div>
+
+  <script>
+    // 模拟Chrome扩展环境
+    if (typeof chrome === 'undefined') {
+      window.chrome = {
+        runtime: {
+          sendMessage: function (message, callback) {
+            console.log('模拟发送消息:', message);
+            if (callback) {
+              setTimeout(() => {
+                callback({ success: true, data: 'mock response' });
+              }, 100);
+            }
+          },
+          onMessage: {
+            addListener: function (callback) {
+              console.log('模拟添加消息监听器');
+              window.__mockMessageListener = callback;
+            }
+          }
+        }
+      };
+    }
+
+    function checkContentScript () {
+      const statusDiv = document.getElementById('contentScriptStatus');
+
+      // 检查是否已初始化
+      if (window.__seoAnalyzerInitialized) {
+        statusDiv.className = 'status success';
+        statusDiv.innerHTML = '✅ Content Script 已成功初始化<br>分析器实例: ' + (window.__seoAnalyzer ? '已创建' : '未创建');
+      } else {
+        statusDiv.className = 'status error';
+        statusDiv.innerHTML = '❌ Content Script 未初始化';
+      }
+    }
+
+    function runAnalysis () {
+      const statusDiv = document.getElementById('analysisStatus');
+      const resultsDiv = document.getElementById('analysisResults');
+
+      statusDiv.className = 'status info';
+      statusDiv.innerHTML = '🔄 正在分析页面...';
+
+      if (window.__seoAnalyzer) {
+        try {
+          // 直接调用分析方法
+          window.__seoAnalyzer.analyzePage().then(data => {
+            statusDiv.className = 'status success';
+            statusDiv.innerHTML = '✅ 页面分析完成！';
+
+            // 显示分析结果
+            resultsDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+          }).catch(error => {
+            statusDiv.className = 'status error';
+            statusDiv.innerHTML = '❌ 分析失败: ' + error.message;
+            resultsDiv.innerHTML = '<div class="error">分析失败: ' + error.message + '</div>';
+          });
+        } catch (error) {
+          statusDiv.className = 'status error';
+          statusDiv.innerHTML = '❌ 分析失败: ' + error.message;
+          resultsDiv.innerHTML = '<div class="error">分析失败: ' + error.message + '</div>';
+        }
+      } else {
+        statusDiv.className = 'status error';
+        statusDiv.innerHTML = '❌ 分析器未初始化';
+      }
+    }
+
+    function clearResults () {
+      document.getElementById('analysisResults').innerHTML = '';
+      document.getElementById('analysisStatus').className = 'status info';
+      document.getElementById('analysisStatus').innerHTML = '点击按钮开始分析页面...';
+    }
+
+    // 页面加载完成后检查状态
+    window.addEventListener('load', function () {
+      setTimeout(checkContentScript, 500);
+    });
+  </script>
+
+  <!-- 加载构建后的content.js -->
+  <script src="dist/content.js"></script>
+</body>
+
+</html>
