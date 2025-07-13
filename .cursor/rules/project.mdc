@@ -6,7 +6,7 @@ alwaysApply: true
 
 # 角色
 
-- 你是一名高级前端开发工程师，你精通 html 和 css，精通 tailwindcss，精通 vite 和 npm
+- 你是一名高级前端开发工程师，你精通 html 和 css，精通 tailwindcss，精通 vite 和 npm 以及 ts
 - 你是一名高级算法工程师，精通算法和性能调优
 - 你是一名图像识别和元素分析师
 - 你是一名算法高手
@@ -24,26 +24,21 @@ alwaysApply: true
 - 利用 npm 构建工具，利用 vite 构建，我需要将代码进行构建处理
 - 实现一个谷歌插件
 - 安装 tailwindcss，并合理使用 tailwindcss
-- 点击插件后，直接在页面的右侧出现一个独立的 html，和当前页面是独立的,也就是谷歌的侧边栏
-- 独立的 html，我称之为 sidebar，它需要展示的内容如下
-  - 当前页面中的 seo 相关信息
-    - 谷歌分析等信息
-    - meta 信息，open graph 信息
-    - 页面的 title，logo，h1,h2,h3，h4 信息
-    - 展示所有图片和图片地址和图片 alt 信息，用表格展示
-- 对当前页面的 seo 信息进行分析，给出推荐建议
+- 使用 ts
+- 点击插件后，唤起谷歌的侧边栏，侧边栏中展示我的内容
+- 侧边栏功能如下
+  - 提取所有的 js，用到了那些分析工具，用到了那些 js 技术等
+  - 当前页面中的 seo 相关信息，meta，title，url，canonical，h1,h2 等标题，
+  - 谷歌分析等信息
+  - meta 信息，open graph 信息
+  - 页面的 title，logo，h1,h2,h3，h4 信息
+  - 展示所有图片和图片地址和图片 alt 信息，用表格展示，展示图片最大 width 为 100px
+- 对当前页面的 seo 信息进行分析，结合 seo 文档，给出推荐建议
 
 - innerHtml 我希望可以抽离出来，减少 content.js 的提价
 - 美化一下页面，更加的模块化，响应式
-- 将这个独立窗口固定在右边？也就是和当前页面并排
 - 优化一下样式，展示图片和图片链接的以及图片的 alt 这些信息，你可以做一个表格展示
 - 充分利用 tailwindcss 美化样式和布局
-
-### 问题修复
-
-- 我 npm run build 失败了，然后你刚才实现的，似乎并没有正确实现我的需求
-- 没有实现谷歌打开侧边栏，而是打开了新窗口，这不是我的预期
-- 只显示了在解析 seo 信息，但没有后续
 
 ### 优化问题
 
@@ -61,7 +56,7 @@ alwaysApply: true
 
 ### 增加需求
 
-- 提取 ld+json 信息,也就是结构化数据信息
+- 提取所有的 ld+json，结合谷歌结构化数据，展示对应的结构化信息
 
 - 将 ld+json 中的产品信息做规划整理,比如产品的价格，tag，和 category，sku 等
 
@@ -73,7 +68,6 @@ alwaysApply: true
 
 - 点击分页没有反应，报错提示 Refused to execute inline event handler because it violates the following Content Security Policy directive: "script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' http://localhost:_ http://127.0.0.1:_". Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present.
 - 导出 excel 同样的问题
-- 结构化数据中的，关于 product 的部分没有提取
 
 ### 新需求
 
@@ -87,15 +81,6 @@ alwaysApply: true
 
 ### 优化
 
-- 添加单词拼写检查功能
+- 添加单词拼写检查功能，提示出有哪些单词拼写错误
 - content.js 中代码体积太大了，你可以把方法体中的部分方法抽离出来
 - 美化一样整体的样式，比如 shadcn 等和 tailwindcss 结合的库
-
-### 修复
-
-- 修复下载 excel，这个功能我们今天下午实现过
-- 修复 h1,h2 等 tag 标签样式
-- 结构化数据改为我们今天下午约定的样式和 offer 展示
-- 连接信息的类型不需要换行
-- 结构化数据，分析工具，seo 优化建议建议排查下
-- 图片列表中图片配置最大为 100px，高度自适应
