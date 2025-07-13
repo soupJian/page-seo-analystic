@@ -6,203 +6,778 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SEO分析侧边栏</title>
   <link rel="stylesheet" href="../styles/main.css">
+  <style>
+    /* 现代化设计样式 */
+    :root {
+      --primary-color: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary-color: #f8fafc;
+      --accent-color: #06b6d4;
+      --success-color: #10b981;
+      --warning-color: #f59e0b;
+      --error-color: #ef4444;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-success: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+      --gradient-warning: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+      --gradient-error: linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .main-container {
+      height: 100vh;
+      overflow-y: auto;
+      background: transparent;
+    }
+
+    /* 头部样式 */
+    .header {
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.5rem;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .header-icon {
+      width: 2rem;
+      height: 2rem;
+      margin-right: 0.75rem;
+      background: var(--gradient-primary);
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .refresh-btn {
+      background: var(--gradient-primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-md);
+      font-size: 0.875rem;
+    }
+
+    .refresh-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* 状态卡片 */
+    .status-card {
+      margin: 1.5rem;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+    }
+
+    .loading-card {
+      background: var(--gradient-primary);
+      color: white;
+    }
+
+    .error-card {
+      background: var(--gradient-error);
+      color: white;
+    }
+
+    .warning-card {
+      background: var(--gradient-warning);
+      color: white;
+    }
+
+    .loading-spinner {
+      width: 1.5rem;
+      height: 1.5rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 0.75rem;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* 内容区域 */
+    .content-area {
+      padding: 0 1.5rem 2rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    /* SEO卡片 */
+    .seo-card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .seo-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .seo-card-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      font-size: 1.125rem;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .seo-card-header.basic-info {
+      background: var(--gradient-primary);
+      color: white;
+    }
+
+    .seo-card-header.meta-info {
+      background: var(--gradient-success);
+      color: white;
+    }
+
+    .seo-card-header.og-info {
+      background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+      color: white;
+    }
+
+    .seo-card-header.heading-info {
+      background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+      color: white;
+    }
+
+    .seo-card-header.image-info {
+      background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+      color: white;
+    }
+
+    .seo-card-header.links-info {
+      background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+      color: white;
+    }
+
+    .seo-card-header.structured-info {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+
+    .seo-card-header.analytics-info {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+    }
+
+    .seo-card-header.spell-info {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+    }
+
+    .seo-card-header.recommendations-info {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      color: white;
+    }
+
+    .seo-card-icon {
+      width: 1.5rem;
+      height: 1.5rem;
+      margin-right: 0.75rem;
+    }
+
+    .seo-card-content {
+      padding: 1.5rem;
+    }
+
+    /* 数据项样式 */
+    .data-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .data-item:last-child {
+      border-bottom: none;
+    }
+
+    .data-label {
+      font-weight: 600;
+      color: var(--text-secondary);
+      min-width: 100px;
+      font-size: 0.875rem;
+    }
+
+    .data-value {
+      color: var(--text-primary);
+      flex: 1;
+      margin-left: 1rem;
+      word-break: break-word;
+    }
+
+    .data-value a {
+      color: var(--primary-color);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .data-value a:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+
+    /* 标签样式 */
+    .tag {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin: 0.125rem;
+    }
+
+    .tag-h1 {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .tag-h2 {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .tag-h3 {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    .tag-h4 {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    .tag-h5 {
+      background: #f3e8ff;
+      color: #9333ea;
+    }
+
+    .tag-h6 {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .tag-internal {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    .tag-external {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .tag-anchor {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    .tag-email {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .tag-phone {
+      background: #f3e8ff;
+      color: #9333ea;
+    }
+
+    .tag-found {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    .tag-not-found {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .tag-high {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .tag-medium {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .tag-low {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    /* 表格样式 */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .data-table th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    .data-table img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-color);
+    }
+
+    /* 分页样式 */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      padding: 1rem;
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border-color);
+      background: white;
+      color: var(--text-secondary);
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.875rem;
+    }
+
+    .pagination-btn:hover {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    .pagination-btn.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pagination-info {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin: 0 1rem;
+    }
+
+    /* 导出按钮 */
+    .export-btn {
+      background: var(--gradient-success);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-md);
+      font-size: 0.875rem;
+      margin-top: 1rem;
+    }
+
+    .export-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      width: 4rem;
+      height: 4rem;
+      margin: 0 auto 1rem;
+      opacity: 0.5;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .header {
+        padding: 1rem;
+      }
+
+      .header-title {
+        font-size: 1.25rem;
+      }
+
+      .content-area {
+        padding: 0 1rem 2rem;
+        gap: 1rem;
+      }
+
+      .seo-card-header {
+        padding: 1rem;
+        font-size: 1rem;
+      }
+
+      .seo-card-content {
+        padding: 1rem;
+      }
+
+      .data-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .data-label {
+        margin-bottom: 0.25rem;
+        min-width: auto;
+      }
+
+      .data-value {
+        margin-left: 0;
+      }
+    }
+
+    /* 动画效果 */
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .slide-in {
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+  </style>
 </head>
 
-<body class="bg-gray-50 font-sans">
-  <div class="h-full overflow-y-auto">
+<body>
+  <div class="main-container">
     <!-- 头部 -->
-    <div class="sticky top-0 bg-white shadow-sm border-b border-gray-200 p-4 z-10">
-      <div class="flex justify-between items-center">
-        <h1 class="text-xl font-bold text-gray-800 flex items-center">
-          <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="header">
+      <div class="header-content">
+        <h1 class="header-title">
+          <div class="header-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+              </path>
+            </svg>
+          </div>
+          SEO 分析报告
+        </h1>
+        <button id="reanalyzeBtn" class="refresh-btn">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16"
+            style="margin-right: 0.5rem;">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
             </path>
           </svg>
-          SEO分析报告
-        </h1>
-        <button id="reanalyzeBtn" class="btn-secondary text-sm">重新分析</button>
+          重新分析
+        </button>
       </div>
     </div>
 
     <!-- 加载状态 -->
-    <div id="loadingStatus" class="p-4 text-center hidden">
-      <div class="flex items-center justify-center">
-        <div class="loading-spinner mr-2"></div>
-        <span class="text-gray-600">正在分析页面...</span>
+    <div id="loadingStatus" class="status-card loading-card hidden">
+      <div style="display: flex; align-items: center;">
+        <div class="loading-spinner"></div>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 0.25rem;">正在分析页面</div>
+          <div style="opacity: 0.9; font-size: 0.875rem;">请稍候，正在收集SEO数据...</div>
+        </div>
       </div>
     </div>
 
     <!-- URL变化通知 -->
-    <div id="urlChangeNotice" class="p-4 bg-yellow-50 border-l-4 border-yellow-400 hidden">
-      <div class="flex items-center justify-between">
+    <div id="urlChangeNotice" class="status-card warning-card hidden">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <p class="text-yellow-800 font-medium">URL已变化</p>
-          <p class="text-yellow-700 text-sm">点击重新分析当前页面</p>
+          <div style="font-weight: 600; margin-bottom: 0.25rem;">URL已变化</div>
+          <div style="opacity: 0.9; font-size: 0.875rem;">点击重新分析当前页面</div>
         </div>
-        <button id="reanalyzeAfterUrlChange" class="btn-primary text-sm">重新分析</button>
+        <button id="reanalyzeAfterUrlChange" class="refresh-btn"
+          style="background: rgba(255,255,255,0.2);">重新分析</button>
       </div>
     </div>
 
     <!-- 错误状态 -->
-    <div id="errorStatus" class="p-4 bg-red-50 border-l-4 border-red-400 hidden">
-      <div class="flex items-center">
-        <svg class="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+    <div id="errorStatus" class="status-card error-card hidden">
+      <div style="display: flex; align-items: center;">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 0.75rem;">
           <path fill-rule="evenodd"
             d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
             clip-rule="evenodd"></path>
         </svg>
-        <span class="text-red-800" id="errorMessage">分析失败</span>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 0.25rem;">分析失败</div>
+          <div id="errorMessage" style="opacity: 0.9; font-size: 0.875rem;">请稍后重试</div>
+        </div>
       </div>
     </div>
 
     <!-- 内容区域 -->
-    <div id="contentArea" class="p-4 space-y-6">
+    <div id="contentArea" class="content-area">
       <!-- 页面基本信息 -->
-      <div class="seo-card">
-        <h2 class="seo-title">
-          <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="seo-card fade-in">
+        <h2 class="seo-card-header basic-info">
+          <svg class="seo-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          页面基本信息
+          基本信息
         </h2>
-        <div id="basicInfo" class="space-y-2">
-          <div class="seo-content">正在分析...</div>
+        <div class="seo-card-content">
+          <div id="basicInfo">正在分析...</div>
         </div>
       </div>
 
       <!-- Meta信息 -->
-      <div class="seo-card">
-        <h2 class="seo-title">
-          <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="seo-card fade-in">
+        <h2 class="seo-card-header meta-info">
+          <svg class="seo-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z">
             </path>
           </svg>
-          Meta信息
+          Meta 信息
         </h2>
-        <div id="metaInfo" class="space-y-2">
-          <div class="seo-content">正在分析...</div>
+        <div class="seo-card-content">
+          <div id="metaInfo">正在分析...</div>
         </div>
       </div>
 
       <!-- Open Graph信息 -->
-      <div class="seo-card">
-        <h2 class="seo-title">
-          <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="seo-card fade-in">
+        <h2 class="seo-card-header og-info">
+          <svg class="seo-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z">
             </path>
           </svg>
-          Open Graph信息
+          Open Graph 信息
         </h2>
-        <div id="openGraphInfo" class="space-y-2">
-          <div class="seo-content">正在分析...</div>
+        <div class="seo-card-content">
+          <div id="openGraphInfo">正在分析...</div>
         </div>
       </div>
 
       <!-- 标题结构 -->
-      <div class="seo-card">
-        <h2 class="seo-title">
-          <svg class="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="seo-card fade-in">
+        <h2 class="seo-card-header heading-info">
+          <svg class="seo-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16">
             </path>
           </svg>
-          标题结构
+          标题结构 <span id="headingCount" style="opacity: 0.8; font-weight: 400;"></span>
         </h2>
-        <div id="headingStructure" class="space-y-2">
-          <div class="seo-content">正在分析...</div>
+        <div class="seo-card-content">
+          <div id="headingStructure">正在分析...</div>
         </div>
       </div>
 
       <!-- 图片信息 -->
-      <div class="seo-card">
-        <h2 class="seo-title">
-          <svg class="w-5 h-5 mr-2 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="seo-card fade-in">
+        <h2 class="seo-card-header image-info">
+          <svg class="seo-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
             </path>
           </svg>
-          图片信息
+          图片信息 <span id="imageCount" style="opacity: 0.8; font-weight: 400;"></span>
+          <button id="exportImagesBtn" class="export-btn"
+            style="margin-left: auto; padding: 0.5rem 1rem; font-size: 0.75rem;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14"
+              style="margin-right: 0.25rem;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+              </path>
+            </svg>
+            导出Excel
+          </button>
         </h2>
-        <div id="imageInfo" class="space-y-2">
-          <div class="seo-content">正在分析...</div>
+        <div class="seo-card-content">
+          <div id="imageInfo">正在分析...</div>
         </div>
       </div>
 
       <!-- 链接信息 -->
-      <div class="seo-card">
-        <h2 class="seo-title">
-          <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="seo-card fade-in">
+        <h2 class="seo-card-header links-info">
+          <svg class="seo-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
             </path>
           </svg>
-          链接信息
+          链接信息 <span id="linksCount" style="opacity: 0.8; font-weight: 400;"></span>
+          <button id="exportLinksBtn" class="export-btn"
+            style="margin-left: auto; padding: 0.5rem 1rem; font-size: 0.75rem;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14"
+              style="margin-right: 0.25rem;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+              </path>
+            </svg>
+            导出Excel
+          </button>
         </h2>
-        <div id="linksInfo" class="space-y-2">
-          <div class="seo-content">正在分析...</div>
+        <div class="seo-card-content">
+          <div id="linksInfo">正在分析...</div>
         </div>
       </div>
 
       <!-- 结构化数据 -->
-      <div class="seo-card">
-        <h2 class="seo-title">
-          <svg class="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="seo-card fade-in">
+        <h2 class="seo-card-header structured-info">
+          <svg class="seo-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
             </path>
           </svg>
-          结构化数据 (JSON-LD)
+          结构化数据 <span id="structuredDataCount" style="opacity: 0.8; font-weight: 400;"></span>
         </h2>
-        <div id="structuredDataInfo" class="space-y-2">
-          <div class="seo-content">正在分析...</div>
+        <div class="seo-card-content">
+          <div id="structuredDataInfo">正在分析...</div>
         </div>
       </div>
 
       <!-- 分析工具检测 -->
-      <div class="seo-card">
-        <h2 class="seo-title">
-          <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="seo-card fade-in">
+        <h2 class="seo-card-header analytics-info">
+          <svg class="seo-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
             </path>
           </svg>
-          分析工具检测
+          分析工具 <span id="analyticsCount" style="opacity: 0.8; font-weight: 400;"></span>
         </h2>
-        <div id="analyticsInfo" class="space-y-2">
-          <div class="seo-content">正在分析...</div>
+        <div class="seo-card-content">
+          <div id="analyticsInfo">正在分析...</div>
         </div>
       </div>
 
       <!-- 拼写检查 -->
-      <div class="seo-card">
-        <h2 class="seo-title">
-          <svg class="w-5 h-5 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="seo-card fade-in">
+        <h2 class="seo-card-header spell-info">
+          <svg class="seo-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
             </path>
           </svg>
           拼写检查
         </h2>
-        <div id="spellCheckInfo" class="space-y-2">
-          <div class="seo-content">正在分析...</div>
+        <div class="seo-card-content">
+          <div id="spellCheckInfo">正在分析...</div>
         </div>
       </div>
 
       <!-- SEO建议 -->
-      <div class="seo-card">
-        <h2 class="seo-title">
-          <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="seo-card fade-in">
+        <h2 class="seo-card-header recommendations-info">
+          <svg class="seo-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
             </path>
           </svg>
-          SEO优化建议
+          优化建议 <span id="recommendationsCount" style="opacity: 0.8; font-weight: 400;"></span>
         </h2>
-        <div id="recommendationsInfo" class="space-y-2">
-          <div class="seo-content">正在分析...</div>
+        <div class="seo-card-content">
+          <div id="recommendationsInfo">正在分析...</div>
         </div>
       </div>
     </div>
