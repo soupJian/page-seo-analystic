@@ -210,9 +210,28 @@ class SidebarManager {
     this.port.onDisconnect.addListener(() => {
       console.log('与background的连接断开');
       this.port = null;
+
+      // 尝试重新连接
+      setTimeout(() => {
+        console.log('尝试重新连接到background...');
+        this.connectToBackground();
+      }, 1000);
     });
 
     console.log('=== 连接到background完成 ===');
+
+    // 发送连接确认消息
+    if (this.port) {
+      try {
+        this.port.postMessage({
+          type: 'SIDEBAR_CONNECTED',
+          message: 'Sidebar已连接'
+        });
+        console.log('已发送连接确认消息');
+      } catch (error) {
+        console.error('发送连接确认消息失败:', error);
+      }
+    }
   }
 
   private setupEventListeners(): void {
@@ -268,16 +287,60 @@ class SidebarManager {
   }
 
   private showUrlChangeNotice(message: MessageData): void {
+    console.log('显示URL变化通知:', message);
+
+    // 显示URL变化通知卡片
+    const urlChangeNotice = document.getElementById('urlChangeNotice');
+    if (urlChangeNotice) {
+      urlChangeNotice.classList.remove('hidden');
+
+      // 更新通知内容
+      const messageElement = urlChangeNotice.querySelector('div > div > div:last-child');
+      if (messageElement) {
+        messageElement.textContent = message.message || '检测到URL变化，正在重新分析...';
+      }
+    }
+
+    // 隐藏其他状态卡片
+    const loadingStatus = document.getElementById('loadingStatus');
+    const errorStatus = document.getElementById('errorStatus');
+    loadingStatus?.classList.add('hidden');
+    errorStatus?.classList.add('hidden');
+
+    // 清空内容区域，显示加载状态
     const container = document.getElementById('contentArea');
     if (container) {
       container.innerHTML = `
-        <div class="url-change-notice">
-          <div class="notice-icon">🔄</div>
-          <h3>页面已变化</h3>
-          <p>检测到URL变化: ${message.message}</p>
-          <button class="reanalyze-btn">重新分析当前页面</button>
+        <div class="seo-card fade-in">
+          <h2 class="seo-card-header basic-info">
+            <svg class="seo-card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            URL变化检测
+          </h2>
+          <div class="seo-card-content">
+            <div style="text-align: center; padding: 2rem;">
+              <div style="margin-bottom: 1rem;">
+                <svg class="w-12 h-12 text-blue-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+              </div>
+              <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; color: #1e293b;">
+                页面已变化
+              </h3>
+              <p style="color: #64748b; margin-bottom: 1.5rem;">
+                ${message.message || '检测到URL变化，正在重新分析页面内容...'}
+              </p>
+              <button class="reanalyze-btn" style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; border: none; cursor: pointer;">
+                立即重新分析
+              </button>
+            </div>
+          </div>
         </div>
       `;
+
+      // 重新绑定事件监听器
+      this.bindEventListeners();
     }
   }
 

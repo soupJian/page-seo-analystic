@@ -235,6 +235,37 @@ class BackgroundManager {
               this.sidebarPorts.delete(tabId);
             });
 
+            // 监听来自sidebar的消息
+            port.onMessage.addListener((message: SidebarMessage) => {
+              console.log('收到来自sidebar的消息:', message);
+
+              if (message.type === 'SIDEBAR_CONNECTED') {
+                console.log(`Sidebar确认连接到标签页 ${tabId}`);
+
+                // 如果有缓存数据，立即发送
+                const cachedData = this.seoDataCache.get(tabId);
+                if (cachedData) {
+                  console.log(`发送缓存数据到标签页 ${tabId} 的sidebar`);
+                  this.sendToSidebar(tabId, {
+                    type: "SEO_DATA",
+                    data: cachedData
+                  });
+                } else {
+                  // 如果没有缓存数据，请求content script分析页面
+                  console.log(`标签页 ${tabId} 没有缓存数据，请求content script分析`);
+                  chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
+                    if (chrome.runtime.lastError) {
+                      console.error('请求分析页面失败:', chrome.runtime.lastError);
+                      this.sendToSidebar(tabId, {
+                        type: "ANALYSIS_ERROR",
+                        error: "无法连接到页面内容脚本，请刷新页面重试"
+                      });
+                    }
+                  });
+                }
+              }
+            });
+
             // 如果有缓存数据，立即发送
             const cachedData = this.seoDataCache.get(tabId);
             if (cachedData) {
@@ -267,6 +298,96 @@ class BackgroundManager {
         // 页面加载完成，清除旧数据
         this.seoDataCache.delete(tabId);
         console.log(`标签页 ${tabId} 页面更新，清除旧数据`);
+
+        // 如果这个标签页有sidebar连接，通知URL变化
+        if (this.sidebarPorts.has(tabId)) {
+          this.sendToSidebar(tabId, {
+            type: "URL_CHANGED",
+            message: "页面已更新，正在重新分析..."
+          });
+
+          // 延迟分析页面，确保内容加载完成
+          setTimeout(() => {
+            chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
+              if (chrome.runtime.lastError) {
+                console.error('请求分析页面失败:', chrome.runtime.lastError);
+                this.sendToSidebar(tabId, {
+                  type: "ANALYSIS_ERROR",
+                  error: "无法连接到页面内容脚本，请刷新页面重试"
+                });
+              }
+            });
+          }, 1000);
+        }
+      }
+    });
+
+    // 监听标签页激活事件（切换标签页）
+    chrome.tabs.onActivated.addListener((activeInfo: chrome.tabs.TabActiveInfo) => {
+      const tabId = activeInfo.tabId;
+      console.log(`标签页 ${tabId} 被激活`);
+
+      // 检查是否有sidebar连接到这个标签页
+      if (this.sidebarPorts.has(tabId)) {
+        console.log(`标签页 ${tabId} 有sidebar连接，检查缓存数据`);
+
+        // 检查是否有缓存数据
+        const cachedData = this.seoDataCache.get(tabId);
+        if (cachedData) {
+          console.log(`发送缓存数据到激活的标签页 ${tabId}`);
+          this.sendToSidebar(tabId, {
+            type: "SEO_DATA",
+            data: cachedData
+          });
+        } else {
+          console.log(`标签页 ${tabId} 没有缓存数据，请求分析`);
+          // 请求content script分析页面
+          chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
+            if (chrome.runtime.lastError) {
+              console.error('请求分析页面失败:', chrome.runtime.lastError);
+              this.sendToSidebar(tabId, {
+                type: "ANALYSIS_ERROR",
+                error: "无法连接到页面内容脚本，请刷新页面重试"
+              });
+            }
+          });
+        }
+      } else {
+        console.log(`标签页 ${tabId} 没有sidebar连接，尝试建立连接`);
+
+        // 尝试为当前激活的标签页建立sidebar连接
+        // 这通常发生在用户切换标签页后，sidebar需要重新连接到新标签页
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]?.id === tabId) {
+            // 检查是否有缓存的sidebar端口
+            const existingPort = Array.from(this.sidebarPorts.values())[0];
+            if (existingPort) {
+              console.log(`将现有sidebar端口重新分配给标签页 ${tabId}`);
+              this.sidebarPorts.set(tabId, existingPort);
+
+              // 检查是否有缓存数据
+              const cachedData = this.seoDataCache.get(tabId);
+              if (cachedData) {
+                console.log(`发送缓存数据到重新连接的标签页 ${tabId}`);
+                this.sendToSidebar(tabId, {
+                  type: "SEO_DATA",
+                  data: cachedData
+                });
+              } else {
+                console.log(`标签页 ${tabId} 没有缓存数据，请求分析`);
+                chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
+                  if (chrome.runtime.lastError) {
+                    console.error('请求分析页面失败:', chrome.runtime.lastError);
+                    this.sendToSidebar(tabId, {
+                      type: "ANALYSIS_ERROR",
+                      error: "无法连接到页面内容脚本，请刷新页面重试"
+                    });
+                  }
+                });
+              }
+            }
+          }
+        });
       }
     });
 

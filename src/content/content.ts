@@ -167,9 +167,17 @@ interface MessageData {
 
     private watchUrlChanges(): void {
       let currentUrl = window.location.href;
+      let lastCheckTime = Date.now();
 
       // 监听popstate事件（浏览器前进后退）
       window.addEventListener('popstate', () => {
+        console.log('检测到popstate事件');
+        this.handleUrlChange();
+      });
+
+      // 监听hashchange事件（URL hash变化）
+      window.addEventListener('hashchange', () => {
+        console.log('检测到hashchange事件');
         this.handleUrlChange();
       });
 
@@ -180,6 +188,7 @@ interface MessageData {
 
       history.pushState = function (...args) {
         originalPushState.apply(history, args);
+        console.log('检测到pushState事件');
         setTimeout(() => {
           self.handleUrlChange();
         }, 100);
@@ -187,18 +196,58 @@ interface MessageData {
 
       history.replaceState = function (...args) {
         originalReplaceState.apply(history, args);
+        console.log('检测到replaceState事件');
         setTimeout(() => {
           self.handleUrlChange();
         }, 100);
       };
 
-      // 定期检查URL变化（备用方案）
+      // 监听DOM变化（SPA应用可能通过DOM变化来改变页面内容）
+      const observer = new MutationObserver((mutations) => {
+        const now = Date.now();
+        // 避免频繁触发，至少间隔500ms
+        if (now - lastCheckTime > 500) {
+          lastCheckTime = now;
+          const newUrl = window.location.href;
+          if (newUrl !== currentUrl) {
+            console.log('通过DOM变化检测到URL变化');
+            currentUrl = newUrl;
+            this.handleUrlChange();
+          }
+        }
+      });
+
+      // 观察整个文档的变化
+      observer.observe(document, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+        characterData: false
+      });
+
+      // 定期检查URL变化（备用方案，每2秒检查一次）
       setInterval(() => {
-        if (currentUrl !== window.location.href) {
-          currentUrl = window.location.href;
+        const newUrl = window.location.href;
+        if (newUrl !== currentUrl) {
+          console.log('通过定时器检测到URL变化');
+          currentUrl = newUrl;
           this.handleUrlChange();
         }
-      }, 1000);
+      }, 2000);
+
+      // 监听页面可见性变化（用户切换标签页回来时）
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          console.log('页面变为可见，检查URL变化');
+          const newUrl = window.location.href;
+          if (newUrl !== currentUrl) {
+            currentUrl = newUrl;
+            this.handleUrlChange();
+          }
+        }
+      });
+
+      console.log('URL变化监听已启动');
     }
 
     private async handleUrlChange(): Promise<void> {
