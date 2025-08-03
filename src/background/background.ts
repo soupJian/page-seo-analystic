@@ -149,18 +149,15 @@ class BackgroundManager {
     // 监听扩展图标点击事件
     chrome.action.onClicked.addListener(async (tab: chrome.tabs.Tab) => {
       if (tab.id && tab.url) {
-        console.log(`点击扩展图标，标签页ID: ${tab.id}, URL: ${tab.url}`);
-
         try {
           // 打开侧边栏
           await chrome.sidePanel.open({ tabId: tab.id });
-          console.log(`已为标签页 ${tab.id} 打开侧边栏`);
 
           // 注入内容脚本
           await this.injectContentScript(tab.id);
 
         } catch (error) {
-          console.error('打开侧边栏失败:', error);
+          // 静默处理错误
         }
       }
     });
@@ -174,12 +171,9 @@ class BackgroundManager {
       const tabId = sender.tab?.id;
       if (!tabId) return false;
 
-      console.log(`收到来自标签页 ${tabId} 的消息:`, request);
-
       if (request.action === "setSeoData") {
         // 存储SEO数据
         this.seoDataCache.set(tabId, request.data!);
-        console.log(`存储标签页 ${tabId} 的SEO数据:`, request.data);
 
         // 转发到对应的sidebar
         this.sendToSidebar(tabId, {
@@ -193,14 +187,11 @@ class BackgroundManager {
       } else if (request.action === "getSeoData") {
         // 获取SEO数据
         const data = this.seoDataCache.get(tabId);
-        console.log(`获取标签页 ${tabId} 的SEO数据:`, data);
         sendResponse({ data: data || null });
         return true;
 
       } else if (request.action === "analyzeUrl") {
         // 分析URL变化
-        console.log(`标签页 ${tabId} URL变化为: ${request.url}`);
-
         // 清除旧数据
         this.seoDataCache.delete(tabId);
 
@@ -220,42 +211,31 @@ class BackgroundManager {
     // 监听来自sidebar的连接
     chrome.runtime.onConnect.addListener((port: chrome.runtime.Port) => {
       if (port.name === "sidebar") {
-        console.log('Sidebar连接建立');
-
         // 获取当前活动标签页
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (tabs[0]?.id) {
             const tabId = tabs[0].id;
             this.sidebarPorts.set(tabId, port);
-            console.log(`Sidebar连接到标签页 ${tabId}`);
 
             // 监听端口断开
             port.onDisconnect.addListener(() => {
-              console.log(`标签页 ${tabId} 的sidebar断开连接`);
               this.sidebarPorts.delete(tabId);
             });
 
             // 监听来自sidebar的消息
             port.onMessage.addListener((message: SidebarMessage) => {
-              console.log('收到来自sidebar的消息:', message);
-
               if (message.type === 'SIDEBAR_CONNECTED') {
-                console.log(`Sidebar确认连接到标签页 ${tabId}`);
-
                 // 如果有缓存数据，立即发送
                 const cachedData = this.seoDataCache.get(tabId);
                 if (cachedData) {
-                  console.log(`发送缓存数据到标签页 ${tabId} 的sidebar`);
                   this.sendToSidebar(tabId, {
                     type: "SEO_DATA",
                     data: cachedData
                   });
                 } else {
                   // 如果没有缓存数据，请求content script分析页面
-                  console.log(`标签页 ${tabId} 没有缓存数据，请求content script分析`);
                   chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
                     if (chrome.runtime.lastError) {
-                      console.error('请求分析页面失败:', chrome.runtime.lastError);
                       this.sendToSidebar(tabId, {
                         type: "ANALYSIS_ERROR",
                         error: "无法连接到页面内容脚本，请刷新页面重试"
@@ -269,17 +249,14 @@ class BackgroundManager {
             // 如果有缓存数据，立即发送
             const cachedData = this.seoDataCache.get(tabId);
             if (cachedData) {
-              console.log(`发送缓存数据到标签页 ${tabId} 的sidebar`);
               this.sendToSidebar(tabId, {
                 type: "SEO_DATA",
                 data: cachedData
               });
             } else {
               // 如果没有缓存数据，请求content script分析页面
-              console.log(`标签页 ${tabId} 没有缓存数据，请求content script分析`);
               chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
                 if (chrome.runtime.lastError) {
-                  console.error('请求分析页面失败:', chrome.runtime.lastError);
                   this.sendToSidebar(tabId, {
                     type: "ANALYSIS_ERROR",
                     error: "无法连接到页面内容脚本，请刷新页面重试"
@@ -297,7 +274,6 @@ class BackgroundManager {
       if (changeInfo.status === 'complete') {
         // 页面加载完成，清除旧数据
         this.seoDataCache.delete(tabId);
-        console.log(`标签页 ${tabId} 页面更新，清除旧数据`);
 
         // 如果这个标签页有sidebar连接，通知URL变化
         if (this.sidebarPorts.has(tabId)) {
@@ -310,7 +286,6 @@ class BackgroundManager {
           setTimeout(() => {
             chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
               if (chrome.runtime.lastError) {
-                console.error('请求分析页面失败:', chrome.runtime.lastError);
                 this.sendToSidebar(tabId, {
                   type: "ANALYSIS_ERROR",
                   error: "无法连接到页面内容脚本，请刷新页面重试"
@@ -325,26 +300,20 @@ class BackgroundManager {
     // 监听标签页激活事件（切换标签页）
     chrome.tabs.onActivated.addListener((activeInfo: chrome.tabs.TabActiveInfo) => {
       const tabId = activeInfo.tabId;
-      console.log(`标签页 ${tabId} 被激活`);
 
       // 检查是否有sidebar连接到这个标签页
       if (this.sidebarPorts.has(tabId)) {
-        console.log(`标签页 ${tabId} 有sidebar连接，检查缓存数据`);
-
         // 检查是否有缓存数据
         const cachedData = this.seoDataCache.get(tabId);
         if (cachedData) {
-          console.log(`发送缓存数据到激活的标签页 ${tabId}`);
           this.sendToSidebar(tabId, {
             type: "SEO_DATA",
             data: cachedData
           });
         } else {
-          console.log(`标签页 ${tabId} 没有缓存数据，请求分析`);
           // 请求content script分析页面
           chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
             if (chrome.runtime.lastError) {
-              console.error('请求分析页面失败:', chrome.runtime.lastError);
               this.sendToSidebar(tabId, {
                 type: "ANALYSIS_ERROR",
                 error: "无法连接到页面内容脚本，请刷新页面重试"
@@ -353,8 +322,6 @@ class BackgroundManager {
           });
         }
       } else {
-        console.log(`标签页 ${tabId} 没有sidebar连接，尝试建立连接`);
-
         // 尝试为当前激活的标签页建立sidebar连接
         // 这通常发生在用户切换标签页后，sidebar需要重新连接到新标签页
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -362,22 +329,18 @@ class BackgroundManager {
             // 检查是否有缓存的sidebar端口
             const existingPort = Array.from(this.sidebarPorts.values())[0];
             if (existingPort) {
-              console.log(`将现有sidebar端口重新分配给标签页 ${tabId}`);
               this.sidebarPorts.set(tabId, existingPort);
 
               // 检查是否有缓存数据
               const cachedData = this.seoDataCache.get(tabId);
               if (cachedData) {
-                console.log(`发送缓存数据到重新连接的标签页 ${tabId}`);
                 this.sendToSidebar(tabId, {
                   type: "SEO_DATA",
                   data: cachedData
                 });
               } else {
-                console.log(`标签页 ${tabId} 没有缓存数据，请求分析`);
                 chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
                   if (chrome.runtime.lastError) {
-                    console.error('请求分析页面失败:', chrome.runtime.lastError);
                     this.sendToSidebar(tabId, {
                       type: "ANALYSIS_ERROR",
                       error: "无法连接到页面内容脚本，请刷新页面重试"
@@ -395,7 +358,6 @@ class BackgroundManager {
     chrome.tabs.onRemoved.addListener((tabId: number) => {
       this.seoDataCache.delete(tabId);
       this.sidebarPorts.delete(tabId);
-      console.log(`标签页 ${tabId} 关闭，清理数据`);
     });
   }
 
@@ -404,13 +366,9 @@ class BackgroundManager {
     if (port) {
       try {
         port.postMessage(message);
-        console.log(`发送消息到标签页 ${tabId} 的sidebar:`, message);
       } catch (error) {
-        console.error(`发送消息到标签页 ${tabId} 失败:`, error);
         this.sidebarPorts.delete(tabId);
       }
-    } else {
-      console.warn(`标签页 ${tabId} 没有连接的sidebar`);
     }
   }
 
@@ -420,9 +378,8 @@ class BackgroundManager {
         target: { tabId },
         files: ['content.js']
       });
-      console.log(`已向标签页 ${tabId} 注入内容脚本`);
     } catch (error) {
-      console.error(`注入内容脚本失败:`, error);
+      // 静默处理错误
     }
   }
 }

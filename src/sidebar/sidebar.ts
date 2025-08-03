@@ -166,59 +166,39 @@ class SidebarManager {
   }
 
   private init(): void {
-    console.log('=== Sidebar初始化开始 ===');
-    console.log('DOM状态:', document.readyState);
-
     this.connectToBackground();
     this.setupEventListeners();
     this.showLoading();
-
-    console.log('=== Sidebar初始化完成 ===');
   }
 
   private connectToBackground(): void {
-    console.log('=== 开始连接到background ===');
     this.port = chrome.runtime.connect({ name: 'sidebar' });
-    console.log('端口创建成功:', this.port);
 
     this.port.onMessage.addListener((message: MessageData) => {
-      console.log('=== 收到消息 ===');
-      console.log('消息类型:', message.type);
-      console.log('消息数据:', message.data);
-      console.log('消息错误:', message.error);
-      console.log('当前loading状态:', this.isLoading);
-      console.log('当前seoData状态:', !!this.seoData);
-
       switch (message.type) {
         case 'SEO_DATA':
-          console.log('处理SEO_DATA消息');
           this.handleSeoData(message.data!);
           break;
         case 'URL_CHANGED':
-          console.log('处理URL_CHANGED消息');
           this.showUrlChangeNotice(message);
           break;
         case 'ANALYSIS_ERROR':
-          console.log('处理ANALYSIS_ERROR消息');
           this.showError(message.error || '分析失败');
           break;
         default:
-          console.warn('未知消息类型:', message.type);
+          // 静默处理未知消息类型
+          break;
       }
     });
 
     this.port.onDisconnect.addListener(() => {
-      console.log('与background的连接断开');
       this.port = null;
 
       // 尝试重新连接
       setTimeout(() => {
-        console.log('尝试重新连接到background...');
         this.connectToBackground();
       }, 1000);
     });
-
-    console.log('=== 连接到background完成 ===');
 
     // 发送连接确认消息
     if (this.port) {
@@ -227,9 +207,8 @@ class SidebarManager {
           type: 'SIDEBAR_CONNECTED',
           message: 'Sidebar已连接'
         });
-        console.log('已发送连接确认消息');
       } catch (error) {
-        console.error('发送连接确认消息失败:', error);
+        // 静默处理错误
       }
     }
   }
@@ -287,8 +266,6 @@ class SidebarManager {
   }
 
   private showUrlChangeNotice(message: MessageData): void {
-    console.log('显示URL变化通知:', message);
-
     // 显示URL变化通知卡片
     const urlChangeNotice = document.getElementById('urlChangeNotice');
     if (urlChangeNotice) {
@@ -345,25 +322,13 @@ class SidebarManager {
   }
 
   private handleSeoData(data: SeoData): void {
-    console.log('=== handleSeoData 开始 ===');
-    console.log('接收到的数据:', data);
-    console.log('数据是否有效:', !!data);
-    console.log('数据类型检查:', typeof data);
-    console.log('数据属性检查:', Object.keys(data || {}));
-
     if (!data) {
-      console.error('接收到的数据为空或无效');
       return;
     }
 
     this.seoData = data;
     this.isLoading = false;
     this.error = null;
-
-    console.log('设置后的状态:');
-    console.log('- seoData:', !!this.seoData);
-    console.log('- isLoading:', this.isLoading);
-    console.log('- error:', this.error);
 
     // 初始化分页
     this.imagePagination.totalItems = data.imageInfo.length;
@@ -372,25 +337,15 @@ class SidebarManager {
     this.linkPagination.totalItems = data.linksInfo.length;
     this.linkPagination.totalPages = Math.ceil(data.linksInfo.length / this.linkPagination.itemsPerPage);
 
-    console.log('分页信息:');
-    console.log('- 图片总数:', this.imagePagination.totalItems);
-    console.log('- 链接总数:', this.linkPagination.totalItems);
-
-    console.log('准备调用updateUI');
     this.updateUI();
-    console.log('=== handleSeoData 结束 ===');
   }
 
   private updateUI(): void {
-    console.log('=== updateUI 开始 ===');
-
     // 显示/隐藏状态卡片
     this.updateStatusCards();
 
     // 更新内容区域
     this.updateContentArea();
-
-    console.log('=== updateUI 结束 ===');
   }
 
   private updateStatusCards(): void {
@@ -421,48 +376,31 @@ class SidebarManager {
 
   private updateContentArea(): void {
     const container = document.getElementById('contentArea');
-    console.log('容器元素:', container);
 
     if (!container) {
-      console.error('找不到contentArea容器元素');
       return;
     }
 
-    console.log('当前状态检查:');
-    console.log('- isLoading:', this.isLoading);
-    console.log('- error:', this.error);
-    console.log('- seoData:', !!this.seoData);
-    console.log('- seoData详情:', this.seoData);
-
     if (this.isLoading) {
-      console.log('显示加载中...');
       container.innerHTML = this.getLoadingHTML();
       return;
     }
 
     if (this.error) {
-      console.log('显示错误:', this.error);
       container.innerHTML = this.getErrorHTML();
       return;
     }
 
     if (!this.seoData) {
-      console.log('显示无数据');
       container.innerHTML = this.getNoDataHTML();
       return;
     }
 
-    console.log('显示主要内容');
     const mainHTML = this.getMainHTML();
-    console.log('生成的HTML长度:', mainHTML.length);
-    console.log('HTML预览:', mainHTML.substring(0, 200) + '...');
-
     container.innerHTML = mainHTML;
-    console.log('HTML已更新到容器');
 
     // 重新绑定事件监听器，因为innerHTML会清除事件监听器
     this.bindEventListeners();
-    console.log('事件监听器已重新绑定');
   }
 
   private bindEventListeners(): void {

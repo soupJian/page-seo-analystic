@@ -171,13 +171,11 @@ interface MessageData {
 
       // 监听popstate事件（浏览器前进后退）
       window.addEventListener('popstate', () => {
-        console.log('检测到popstate事件');
         this.handleUrlChange();
       });
 
       // 监听hashchange事件（URL hash变化）
       window.addEventListener('hashchange', () => {
-        console.log('检测到hashchange事件');
         this.handleUrlChange();
       });
 
@@ -188,7 +186,6 @@ interface MessageData {
 
       history.pushState = function (...args) {
         originalPushState.apply(history, args);
-        console.log('检测到pushState事件');
         setTimeout(() => {
           self.handleUrlChange();
         }, 100);
@@ -196,7 +193,6 @@ interface MessageData {
 
       history.replaceState = function (...args) {
         originalReplaceState.apply(history, args);
-        console.log('检测到replaceState事件');
         setTimeout(() => {
           self.handleUrlChange();
         }, 100);
@@ -210,7 +206,6 @@ interface MessageData {
           lastCheckTime = now;
           const newUrl = window.location.href;
           if (newUrl !== currentUrl) {
-            console.log('通过DOM变化检测到URL变化');
             currentUrl = newUrl;
             this.handleUrlChange();
           }
@@ -229,7 +224,6 @@ interface MessageData {
       setInterval(() => {
         const newUrl = window.location.href;
         if (newUrl !== currentUrl) {
-          console.log('通过定时器检测到URL变化');
           currentUrl = newUrl;
           this.handleUrlChange();
         }
@@ -238,7 +232,6 @@ interface MessageData {
       // 监听页面可见性变化（用户切换标签页回来时）
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
-          console.log('页面变为可见，检查URL变化');
           const newUrl = window.location.href;
           if (newUrl !== currentUrl) {
             currentUrl = newUrl;
@@ -246,15 +239,12 @@ interface MessageData {
           }
         }
       });
-
-      console.log('URL变化监听已启动');
     }
 
     private async handleUrlChange(): Promise<void> {
       const currentUrl = window.location.href;
       if (currentUrl !== this.lastUrl) {
         this.lastUrl = currentUrl;
-        console.log('URL变化检测到:', currentUrl);
 
         // 通知background script URL变化
         chrome.runtime.sendMessage({
@@ -275,7 +265,6 @@ interface MessageData {
       }
 
       this.isAnalyzing = true;
-      console.log('开始分析页面...');
 
       try {
         const data: SeoData = {
@@ -297,10 +286,8 @@ interface MessageData {
           data: data
         });
 
-        console.log('页面分析完成:', data);
         return data;
       } catch (error) {
-        console.error('页面分析失败:', error);
         throw error;
       } finally {
         this.isAnalyzing = false;
