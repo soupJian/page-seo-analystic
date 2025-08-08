@@ -638,23 +638,13 @@ import {
 
       // 图片优化规则
       const images = this.getImageInfo();
-      const imagesWithoutAlt = images.filter(img => !img.alt || img.alt.trim() === '');
+      const imagesWithoutAlt = images.filter(img => !img.alt || img.alt.trim() === '' || img.alt === '-');
       if (imagesWithoutAlt.length > 0) {
         recommendations.push({
           category: '图片优化',
           issue: '图片缺少Alt属性',
-          suggestion: `为${imagesWithoutAlt.length}张图片添加Alt属性，提高可访问性和SEO效果`,
+          suggestion: `为${imagesWithoutAlt.length}张图片添加描述性的Alt属性，提高可访问性和SEO效果`,
           priority: 'high'
-        });
-      }
-
-      const imagesWithEmptyAlt = images.filter(img => img.alt === '' || img.alt === '-');
-      if (imagesWithEmptyAlt.length > 0) {
-        recommendations.push({
-          category: '图片优化',
-          issue: '图片Alt属性为空',
-          suggestion: '为没有Alt属性的图片添加描述性的Alt文本',
-          priority: 'medium'
         });
       }
 

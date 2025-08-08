@@ -427,57 +427,60 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
             size="small"
           >
             <Row gutter={[16, 8]}>
-              <Col span={12}>
-                <Statistic
-                  title="页面标题"
-                  value={seoData.basicInfo.title || "-"}
-                />
-              </Col>
-              <Col span={12}>
-                <Statistic
-                  title="语言"
-                  value={seoData.basicInfo.language || "-"}
-                />
+              <Col span={24}>
+                <Paragraph>
+                  <Text strong>页面标题:</Text>
+                  <br />
+                  <Text>{seoData.basicInfo.title || "-"}</Text>
+                </Paragraph>
               </Col>
             </Row>
-            <Paragraph style={{ marginTop: 8 }}>
-              <Text strong>URL:</Text>
-              <br />
-              <Text copyable style={{ fontSize: "12px" }}>
-                {seoData.basicInfo.url}
-              </Text>
-            </Paragraph>
-          </Card>
-
-          {/* Meta信息 */}
-          <Card
-            title={
-              <Space>
-                <InfoCircleOutlined />
-                Meta信息
-              </Space>
-            }
-            size="small"
-          >
             <Row gutter={[16, 8]}>
               <Col span={24}>
                 <Paragraph>
-                  <Text strong>描述:</Text>
+                  <Text strong>Meta描述:</Text>
                   <br />
                   <Text>{seoData.metaInfo.description || "-"}</Text>
                 </Paragraph>
               </Col>
+            </Row>
+            <Row gutter={[16, 8]}>
+              <Col span={24}>
+                <Paragraph>
+                  <Text strong>关键词:</Text>
+                  <br />
+                  <Text>{seoData.metaInfo.keywords || "-"}</Text>
+                </Paragraph>
+              </Col>
+            </Row>
+            <Row gutter={[16, 8]}>
               <Col span={12}>
-                <Statistic
-                  title="关键词"
-                  value={seoData.metaInfo.keywords || "-"}
-                />
+                <Paragraph>
+                  <Text strong>当前URL:</Text>
+                  <br />
+                  <Text
+                    copyable
+                    style={{ fontSize: "12px", wordBreak: "break-all" }}
+                  >
+                    {seoData.basicInfo.url}
+                  </Text>
+                </Paragraph>
               </Col>
               <Col span={12}>
-                <Statistic
-                  title="Canonical"
-                  value={seoData.metaInfo.canonical || "-"}
-                />
+                <Paragraph>
+                  <Text strong>Canonical URL:</Text>
+                  <br />
+                  {seoData.metaInfo.canonical ? (
+                    <Text
+                      copyable
+                      style={{ fontSize: "12px", wordBreak: "break-all" }}
+                    >
+                      {seoData.metaInfo.canonical}
+                    </Text>
+                  ) : (
+                    <Text style={{ fontSize: "12px", color: "#999" }}>-</Text>
+                  )}
+                </Paragraph>
               </Col>
             </Row>
           </Card>
