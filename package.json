@@ -20,6 +20,7 @@
   "devDependencies": {
     "@types/chrome": "^0.0.268",
     "@types/node": "^20.0.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.0",
@@ -28,6 +29,11 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "antd": "^5.26.7",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "xlsx": "^0.18.5"
   }
 }

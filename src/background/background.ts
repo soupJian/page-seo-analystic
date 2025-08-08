@@ -168,7 +168,50 @@ class BackgroundManager {
       sender: chrome.runtime.MessageSender,
       sendResponse: (response: any) => void
     ) => {
+      console.log("onMessage", request);
       const tabId = sender.tab?.id;
+
+      // 对于REANALYZE消息，不需要检查tabId，因为它是从sidebar发送的
+      if (request.action === "REANALYZE") {
+        console.log("REANALYZE received");
+
+        // 获取当前活动标签页的ID
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]?.id) {
+            const activeTabId = tabs[0].id;
+            console.log("Active tab ID:", activeTabId);
+
+            // 清除旧数据
+            this.seoDataCache.delete(activeTabId);
+
+            // 通知sidebar开始重新分析
+            this.sendToSidebar(activeTabId, {
+              type: "URL_CHANGED",
+              message: "正在重新分析页面..."
+            });
+
+            // 请求content script重新分析页面
+            chrome.tabs.sendMessage(activeTabId, { action: "analyzePage" }, (response) => {
+              console.log("Content script response:", response);
+
+              if (chrome.runtime.lastError) {
+                console.log("Content script error:", chrome.runtime.lastError);
+                this.sendToSidebar(activeTabId, {
+                  type: "ANALYSIS_ERROR",
+                  error: "无法连接到页面内容脚本，请刷新页面重试"
+                });
+              }
+            });
+          } else {
+            console.log("No active tab found");
+          }
+        });
+
+        sendResponse({ success: true });
+        return true;
+      }
+
+      // 对于其他消息，需要检查tabId
       if (!tabId) return false;
 
       if (request.action === "setSeoData") {
