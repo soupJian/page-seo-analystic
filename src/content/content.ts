@@ -1,132 +1,22 @@
 // 内容脚本 - 页面分析和SEO数据收集
 
-// 类型定义
-interface SeoData {
-  basicInfo: BasicInfo;
-  metaInfo: MetaInfo;
-  openGraphInfo: OpenGraphInfo;
-  headingStructure: HeadingInfo[];
-  imageInfo: ImageInfo[];
-  linksInfo: LinkInfo[];
-  structuredData: StructuredDataInfo[];
-  analyticsInfo: AnalyticsInfo[];
-  spellCheck: SpellCheckInfo[];
-  recommendations: RecommendationInfo[];
-}
-
-interface BasicInfo {
-  title: string;
-  url: string;
-  language: string;
-  charset: string;
-  logo: string;
-  description: string;
-}
-
-interface MetaInfo {
-  description: string;
-  keywords: string;
-  canonical: string;
-  robots: string;
-  viewport: string;
-  author: string;
-  generator: string;
-  themeColor: string;
-  appleTouchIcon: string;
-  favicon: string;
-}
-
-interface OpenGraphInfo {
-  title: string;
-  type: string;
-  image: string;
-  url: string;
-  description: string;
-  siteName: string;
-  locale: string;
-}
-
-interface HeadingInfo {
-  tag: string;
-  text: string;
-  level: number;
-}
-
-interface ImageInfo {
-  src: string;
-  alt: string;
-  width: number;
-  height: number;
-  loading: string;
-}
-
-interface LinkInfo {
-  href: string;
-  text: string;
-  type: string;
-  title: string;
-  rel: string;
-}
-
-interface StructuredDataInfo {
-  type: string;
-  name: string;
-  content: Record<string, unknown>;
-  products?: ProductInfo[];
-}
-
-interface ProductInfo {
-  name: string;
-  price: string;
-  currency: string;
-  availability: string;
-  condition: string;
-  brand: string;
-  category: string;
-  sku: string;
-  description: string;
-  image: string;
-  url: string;
-  rating: string;
-  ratingCount: string;
-  offers: OfferInfo[];
-}
-
-interface OfferInfo {
-  price: string;
-  currency: string;
-  availability: string;
-  condition: string;
-  seller: string;
-  url: string;
-}
-
-interface AnalyticsInfo {
-  name: string;
-  id: string;
-  type: string;
-  found: boolean;
-}
-
-interface SpellCheckInfo {
-  word: string;
-  suggestions: string[];
-  context: string;
-}
-
-interface RecommendationInfo {
-  category: string;
-  issue: string;
-  suggestion: string;
-  priority: string;
-}
-
-interface MessageData {
-  action: string;
-  data?: SeoData;
-  url?: string;
-  error?: string;
-}
+// 导入统一类型定义
+import {
+  SeoData,
+  BasicInfo,
+  MetaInfo,
+  OpenGraphInfo,
+  HeadingInfo,
+  ImageInfo,
+  LinkInfo,
+  StructuredDataInfo,
+  ProductInfo,
+  OfferInfo,
+  AnalyticsInfo,
+  SpellCheckInfo,
+  RecommendationInfo,
+  MessageData
+} from '../types';
 
 // 初始化内容分析器 - 使用IIFE避免全局变量冲突
 (function () {
@@ -682,105 +572,211 @@ interface MessageData {
     }
 
     private getRecommendations(): RecommendationInfo[] {
+      // 内联SEO规则检查，避免动态导入问题
       const recommendations: RecommendationInfo[] = [];
 
-      // 检查标题长度
+      // 标题优化规则
       const title = document.title;
-      if (title.length < 30) {
+      if (!title || title.trim() === '') {
         recommendations.push({
-          category: 'Title',
-          issue: '标题过短',
-          suggestion: '建议标题长度在30-60个字符之间，当前长度: ' + title.length,
-          priority: 'medium'
+          category: '标题优化',
+          issue: '页面标题缺失',
+          suggestion: '添加一个描述性的页面标题，长度建议在50-60个字符之间',
+          priority: 'high'
         });
       } else if (title.length > 60) {
         recommendations.push({
-          category: 'Title',
-          issue: '标题过长',
-          suggestion: '建议标题长度在30-60个字符之间，当前长度: ' + title.length,
+          category: '标题优化',
+          issue: '页面标题过长',
+          suggestion: '页面标题过长，建议缩短到50-60个字符，避免在搜索结果中被截断',
           priority: 'medium'
         });
-      }
-
-      // 检查Meta描述
-      const description = this.getMetaContent('description');
-      if (!description) {
+      } else if (title.length < 30) {
         recommendations.push({
-          category: 'Meta',
-          issue: '缺少Meta描述',
-          suggestion: '添加Meta描述标签，长度建议在150-160个字符之间',
-          priority: 'high'
-        });
-      } else if (description.length < 120) {
-        recommendations.push({
-          category: 'Meta',
-          issue: 'Meta描述过短',
-          suggestion: '建议Meta描述长度在150-160个字符之间，当前长度: ' + description.length,
-          priority: 'medium'
-        });
-      } else if (description.length > 160) {
-        recommendations.push({
-          category: 'Meta',
-          issue: 'Meta描述过长',
-          suggestion: '建议Meta描述长度在150-160个字符之间，当前长度: ' + description.length,
-          priority: 'medium'
-        });
-      }
-
-      // 检查H1标签
-      const h1Elements = document.querySelectorAll('h1');
-      if (h1Elements.length === 0) {
-        recommendations.push({
-          category: 'Headings',
-          issue: '缺少H1标签',
-          suggestion: '每个页面应该有且仅有一个H1标签',
-          priority: 'high'
-        });
-      } else if (h1Elements.length > 1) {
-        recommendations.push({
-          category: 'Headings',
-          issue: '多个H1标签',
-          suggestion: '每个页面应该有且仅有一个H1标签，当前有' + h1Elements.length + '个',
-          priority: 'high'
-        });
-      }
-
-      // 检查图片Alt属性
-      const images = document.querySelectorAll('img');
-      let missingAltCount = 0;
-      images.forEach(img => {
-        if (!img.alt) {
-          missingAltCount++;
-        }
-      });
-
-      if (missingAltCount > 0) {
-        recommendations.push({
-          category: 'Images',
-          issue: '图片缺少Alt属性',
-          suggestion: `${missingAltCount}张图片缺少Alt属性，建议为所有图片添加描述性的Alt文本`,
-          priority: 'medium'
-        });
-      }
-
-      // 检查内部链接
-      const links = document.querySelectorAll('a[href]');
-      let internalLinkCount = 0;
-      links.forEach(link => {
-        const linkEl = link as HTMLAnchorElement;
-        if (linkEl.href.startsWith(window.location.origin)) {
-          internalLinkCount++;
-        }
-      });
-
-      if (internalLinkCount < 3) {
-        recommendations.push({
-          category: 'Links',
-          issue: '内部链接过少',
-          suggestion: '建议增加更多内部链接以改善网站结构和用户体验',
+          category: '标题优化',
+          issue: '页面标题过短',
+          suggestion: '页面标题过短，建议增加更多描述性内容，长度建议在30-60个字符之间',
           priority: 'low'
         });
       }
+
+      // Meta信息规则
+      const description = this.getMetaContent('description');
+      if (!description || description.trim() === '') {
+        recommendations.push({
+          category: 'Meta描述',
+          issue: 'Meta描述缺失',
+          suggestion: '添加Meta描述标签，长度建议在150-160个字符之间，包含关键词和页面主要内容',
+          priority: 'high'
+        });
+      } else if (description.length > 160) {
+        recommendations.push({
+          category: 'Meta描述',
+          issue: 'Meta描述过长',
+          suggestion: 'Meta描述过长，建议缩短到150-160个字符，避免在搜索结果中被截断',
+          priority: 'medium'
+        });
+      } else if (description.length < 120) {
+        recommendations.push({
+          category: 'Meta描述',
+          issue: 'Meta描述过短',
+          suggestion: 'Meta描述过短，建议增加更多描述性内容，长度建议在120-160个字符之间',
+          priority: 'low'
+        });
+      }
+
+      // 关键词规则
+      const keywords = this.getMetaContent('keywords');
+      if (!keywords || keywords.trim() === '') {
+        recommendations.push({
+          category: '关键词优化',
+          issue: 'Meta关键词缺失',
+          suggestion: '添加Meta关键词标签，包含页面相关的关键词',
+          priority: 'medium'
+        });
+      }
+
+      // 图片优化规则
+      const images = this.getImageInfo();
+      const imagesWithoutAlt = images.filter(img => !img.alt || img.alt.trim() === '');
+      if (imagesWithoutAlt.length > 0) {
+        recommendations.push({
+          category: '图片优化',
+          issue: '图片缺少Alt属性',
+          suggestion: `为${imagesWithoutAlt.length}张图片添加Alt属性，提高可访问性和SEO效果`,
+          priority: 'high'
+        });
+      }
+
+      const imagesWithEmptyAlt = images.filter(img => img.alt === '' || img.alt === '-');
+      if (imagesWithEmptyAlt.length > 0) {
+        recommendations.push({
+          category: '图片优化',
+          issue: '图片Alt属性为空',
+          suggestion: '为没有Alt属性的图片添加描述性的Alt文本',
+          priority: 'medium'
+        });
+      }
+
+      // 标题结构规则
+      const headings = this.getHeadingStructure();
+      const h1Count = headings.filter(h => h.level === 1).length;
+      if (h1Count === 0) {
+        recommendations.push({
+          category: '标题结构',
+          issue: '缺少H1标题',
+          suggestion: '每个页面应该只有一个H1标题，用于描述页面的主要内容',
+          priority: 'high'
+        });
+      } else if (h1Count > 1) {
+        recommendations.push({
+          category: '标题结构',
+          issue: '多个H1标题',
+          suggestion: '页面包含多个H1标题，建议只保留一个主要的H1标题',
+          priority: 'high'
+        });
+      }
+
+      // 标题层级规则
+      const levels = headings.map(h => h.level);
+      for (let i = 1; i < levels.length; i++) {
+        if (levels[i] - levels[i - 1] > 1) {
+          recommendations.push({
+            category: '标题结构',
+            issue: '标题层级不合理',
+            suggestion: '标题层级应该合理，H1后面应该是H2，H2后面可以是H3，避免跳过层级',
+            priority: 'medium'
+          });
+          break;
+        }
+      }
+
+      // 链接优化规则
+      const links = this.getLinksInfo();
+      const badLinks = links.filter(link =>
+        !link.text ||
+        link.text.trim() === '' ||
+        link.text.toLowerCase().includes('点击') ||
+        link.text.toLowerCase().includes('click')
+      );
+      if (badLinks.length > 0) {
+        recommendations.push({
+          category: '链接优化',
+          issue: '链接缺少描述性文本',
+          suggestion: '为链接添加描述性的文本，避免使用"点击这里"等无意义的文本',
+          priority: 'medium'
+        });
+      }
+
+      // 结构化数据规则
+      const structuredData = this.getStructuredData();
+      if (structuredData.length === 0) {
+        recommendations.push({
+          category: '结构化数据',
+          issue: '缺少结构化数据',
+          suggestion: '添加结构化数据（JSON-LD），帮助搜索引擎更好地理解页面内容',
+          priority: 'medium'
+        });
+      }
+
+      // 社交媒体规则
+      const ogTitle = this.getMetaProperty('og:title');
+      const ogDescription = this.getMetaProperty('og:description');
+      if (!ogTitle && !ogDescription) {
+        recommendations.push({
+          category: '社交媒体优化',
+          issue: '缺少Open Graph标签',
+          suggestion: '添加Open Graph标签，优化在社交媒体上的显示效果',
+          priority: 'medium'
+        });
+      }
+
+      const ogImage = this.getMetaProperty('og:image');
+      if (!ogImage) {
+        recommendations.push({
+          category: '社交媒体优化',
+          issue: 'Open Graph图片缺失',
+          suggestion: '添加Open Graph图片，提高在社交媒体上的分享效果',
+          priority: 'low'
+        });
+      }
+
+      // 移动端优化规则
+      const viewport = this.getMetaContent('viewport');
+      if (!viewport || viewport.trim() === '') {
+        recommendations.push({
+          category: '移动端优化',
+          issue: '缺少Viewport设置',
+          suggestion: '添加viewport meta标签，确保页面在移动设备上正确显示',
+          priority: 'high'
+        });
+      }
+
+      // 可访问性规则
+      const language = document.documentElement.lang || '';
+      if (!language || language.trim() === '') {
+        recommendations.push({
+          category: '可访问性',
+          issue: '缺少语言设置',
+          suggestion: '在HTML标签中设置正确的语言属性',
+          priority: 'medium'
+        });
+      }
+
+      // 性能优化规则
+      const largeImages = images.filter(img => img.width > 1920 || img.height > 1080);
+      if (largeImages.length > 0) {
+        recommendations.push({
+          category: '性能优化',
+          issue: '图片未优化',
+          suggestion: '使用适当的图片格式和大小，考虑使用WebP格式和懒加载',
+          priority: 'medium'
+        });
+      }
+
+      // 按优先级排序
+      const priorityOrder = { high: 3, medium: 2, low: 1 };
+      recommendations.sort((a, b) => priorityOrder[b.priority as keyof typeof priorityOrder] - priorityOrder[a.priority as keyof typeof priorityOrder]);
 
       return recommendations;
     }

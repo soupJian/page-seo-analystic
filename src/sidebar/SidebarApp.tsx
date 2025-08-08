@@ -33,93 +33,8 @@ import {
 
 const { Title, Text, Paragraph } = Typography;
 
-interface SeoData {
-  basicInfo: {
-    title: string;
-    url: string;
-    language: string;
-    charset: string;
-    logo: string;
-    description: string;
-  };
-  metaInfo: {
-    description: string;
-    keywords: string;
-    canonical: string;
-    robots: string;
-    viewport: string;
-    author: string;
-    generator: string;
-    themeColor: string;
-    appleTouchIcon: string;
-    favicon: string;
-  };
-  openGraphInfo: {
-    title: string;
-    type: string;
-    image: string;
-    url: string;
-    description: string;
-    siteName: string;
-    locale: string;
-  };
-  headingStructure: Array<{
-    tag: string;
-    text: string;
-    level: number;
-  }>;
-  imageInfo: Array<{
-    src: string;
-    alt: string;
-    width: number;
-    height: number;
-    loading: string;
-  }>;
-  linksInfo: Array<{
-    href: string;
-    text: string;
-    type: string;
-    title: string;
-    rel: string;
-  }>;
-  structuredData: Array<{
-    type: string;
-    name: string;
-    content: Record<string, unknown>;
-    products?: Array<{
-      name: string;
-      price: string;
-      currency: string;
-      availability: string;
-      condition: string;
-      brand: string;
-      category: string;
-      sku: string;
-      description: string;
-      image: string;
-      url: string;
-      rating: string;
-      ratingCount: string;
-    }>;
-  }>;
-  analyticsInfo: Array<{
-    name: string;
-    id: string;
-    type: string;
-    found: boolean;
-  }>;
-  spellCheck: Array<{
-    word: string;
-    suggestions: string[];
-    context: string;
-  }>;
-  recommendations: Array<{
-    category: string;
-    issue: string;
-    suggestion: string;
-    priority: string;
-  }>;
-}
+// 导入统一类型定义
+import { SeoData } from "../types";
 
 interface SidebarAppProps {
   onReanalyze: () => void;
@@ -484,7 +399,7 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
           flexShrink: 0,
         }}
       >
-        <Space>
+        <Space style={{ width: "100%", justifyContent: "space-between" }}>
           <Title level={4} style={{ margin: 0 }}>
             页面分析工具
           </Title>
