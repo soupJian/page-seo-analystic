@@ -60,6 +60,7 @@ export interface ImageInfo {
   width: number;
   height: number;
   loading: string;
+  format?: string;
 }
 
 export interface LinkInfo {

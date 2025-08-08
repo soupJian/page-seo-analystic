@@ -320,12 +320,18 @@ import {
         const loading = img.loading || '';
 
         if (src) {
+          // 检查图片格式
+          const isSvg = src.toLowerCase().includes('.svg') || src.includes('data:image/svg+xml');
+          const isWebp = src.toLowerCase().includes('.webp');
+          const isOptimized = isSvg || isWebp;
+
           images.push({
             src,
             alt,
             width,
             height,
-            loading
+            loading,
+            format: isSvg ? 'svg' : isWebp ? 'webp' : 'other'
           });
         }
       });
@@ -354,6 +360,12 @@ import {
           type = 'email';
         } else if (href.startsWith('tel:')) {
           type = 'phone';
+        } else if (href.startsWith('javascript:')) {
+          type = 'javascript';
+        } else if (href.startsWith('ftp:')) {
+          type = 'ftp';
+        } else if (href.startsWith('file:')) {
+          type = 'file';
         }
 
         if (href && text) {
@@ -640,11 +652,32 @@ import {
       const images = this.getImageInfo();
       const imagesWithoutAlt = images.filter(img => !img.alt || img.alt.trim() === '' || img.alt === '-');
       if (imagesWithoutAlt.length > 0) {
+        const imageUrls = imagesWithoutAlt.map(img => img.src).slice(0, 3); // 只显示前3个链接
+        const moreCount = imagesWithoutAlt.length > 3 ? imagesWithoutAlt.length - 3 : 0;
+        const urlList = imageUrls.join(', ');
+        const moreText = moreCount > 0 ? ` 等${moreCount}张图片` : '';
+
         recommendations.push({
           category: '图片优化',
           issue: '图片缺少Alt属性',
-          suggestion: `为${imagesWithoutAlt.length}张图片添加描述性的Alt属性，提高可访问性和SEO效果`,
+          suggestion: `为${imagesWithoutAlt.length}张图片添加描述性的Alt属性，提高可访问性和SEO效果。需要优化的图片：${urlList}${moreText}`,
           priority: 'high'
+        });
+      }
+
+      // 图片格式优化规则
+      const nonOptimizedImages = images.filter(img => img.format !== 'svg' && img.format !== 'webp');
+      if (nonOptimizedImages.length > 0) {
+        const imageUrls = nonOptimizedImages.map(img => img.src).slice(0, 3); // 只显示前3个链接
+        const moreCount = nonOptimizedImages.length > 3 ? nonOptimizedImages.length - 3 : 0;
+        const urlList = imageUrls.join(', ');
+        const moreText = moreCount > 0 ? ` 等${moreCount}张图片` : '';
+
+        recommendations.push({
+          category: '图片优化',
+          issue: '图片格式未优化',
+          suggestion: `考虑将${nonOptimizedImages.length}张图片转换为SVG或WebP格式，提高加载速度和用户体验。需要优化的图片：${urlList}${moreText}`,
+          priority: 'medium'
         });
       }
 

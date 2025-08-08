@@ -18,6 +18,7 @@ import {
   Progress,
   Tooltip,
   Image,
+  Select,
 } from "antd";
 import {
   ReloadOutlined,
@@ -46,7 +47,27 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
   const [error, setError] = useState<string | null>(null);
   const [imagePage, setImagePage] = useState(1);
   const [linkPage, setLinkPage] = useState(1);
+  const [imageFilter, setImageFilter] = useState("");
+  const [linkFilter, setLinkFilter] = useState("all"); // 'all', 'internal', 'external'
+  const [recommendationImagePage, setRecommendationImagePage] = useState<
+    Record<number, number>
+  >({});
   const pageSize = 10;
+
+  // 当过滤器变化时重置分页
+  useEffect(() => {
+    setImagePage(1);
+  }, [imageFilter]);
+
+  useEffect(() => {
+    setLinkPage(1);
+  }, [linkFilter]);
+
+  // 当数据变化时重置分页
+  useEffect(() => {
+    setImagePage(1);
+    setLinkPage(1);
+  }, [seoData]);
 
   // 处理重新分析
   const handleReanalyze = () => {
@@ -142,6 +163,23 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
       default:
         return "default";
     }
+  };
+
+  // 解析优化建议中的图片链接
+  const parseImageUrls = (suggestion: string) => {
+    const urlMatch = suggestion.match(
+      /需要优化的图片：(.+?)(?:\s+等\d+张图片)?$/
+    );
+    if (!urlMatch) return { text: suggestion, urls: [] };
+
+    const urlText = urlMatch[1];
+    const urls = urlText.split(", ").filter(url => url.trim());
+    const text = suggestion.replace(
+      /需要优化的图片：.+?(?:\s+等\d+张图片)?$/,
+      ""
+    );
+
+    return { text: text.trim(), urls };
   };
 
   // Loading state with full-height container
@@ -317,6 +355,23 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
         </Tag>
       ),
     },
+    {
+      title: "格式",
+      key: "format",
+      render: (_: any, record: any) => {
+        const format = record.format || "other";
+        const formatConfig = {
+          svg: { color: "purple", text: "SVG" },
+          webp: { color: "green", text: "WebP" },
+          other: { color: "orange", text: "其他格式" },
+        };
+
+        const config =
+          formatConfig[format as keyof typeof formatConfig] ||
+          formatConfig.other;
+        return <Tag color={config.color}>{config.text}</Tag>;
+      },
+    },
   ];
 
   const linkColumns = [
@@ -355,29 +410,74 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
       title: "类型",
       dataIndex: "type",
       key: "type",
-      render: (type: string) => (
-        <Tag color={type === "external" ? "blue" : "green"}>
-          {type === "external" ? "外部链接" : "内部链接"}
-        </Tag>
-      ),
-    },
-    {
-      title: "标题",
-      dataIndex: "title",
-      key: "title",
-      render: (title: string) => (
-        <Text type={title ? undefined : "secondary"}>{title || "-"}</Text>
-      ),
+      render: (type: string) => {
+        const typeConfig = {
+          internal: { color: "green", text: "内部链接" },
+          external: { color: "blue", text: "外部链接" },
+          email: { color: "purple", text: "邮箱链接" },
+          phone: { color: "orange", text: "电话链接" },
+          anchor: { color: "cyan", text: "锚点链接" },
+          javascript: { color: "red", text: "JavaScript" },
+          ftp: { color: "magenta", text: "FTP链接" },
+          file: { color: "geekblue", text: "文件链接" },
+        };
+
+        const config = typeConfig[type as keyof typeof typeConfig] || {
+          color: "default",
+          text: type,
+        };
+        return <Tag color={config.color}>{config.text}</Tag>;
+      },
     },
   ];
 
-  const paginatedImages = seoData.imageInfo.slice(
-    (imagePage - 1) * pageSize,
-    imagePage * pageSize
+  // 图片过滤逻辑
+  const filteredImages = seoData.imageInfo.filter(img => {
+    const hasEmptyAlt = !img.alt || img.alt.trim() === "" || img.alt === "-";
+    const format = img.format || "other";
+
+    if (imageFilter === "empty-alt") {
+      return hasEmptyAlt;
+    } else if (imageFilter === "not-optimized") {
+      return format !== "svg" && format !== "webp";
+    } else if (imageFilter === "svg") {
+      return format === "svg";
+    } else if (imageFilter === "webp") {
+      return format === "webp";
+    }
+    return true; // 显示所有图片
+  });
+
+  // 确保当前页不超过过滤后的数据总数
+  const maxImagePage = Math.ceil(filteredImages.length / pageSize);
+  const currentImagePage = Math.min(imagePage, maxImagePage || 1);
+
+  const paginatedImages = filteredImages.slice(
+    (currentImagePage - 1) * pageSize,
+    currentImagePage * pageSize
   );
-  const paginatedLinks = seoData.linksInfo.slice(
-    (linkPage - 1) * pageSize,
-    linkPage * pageSize
+
+  // 链接过滤逻辑
+  const filteredLinks = seoData.linksInfo.filter(link => {
+    if (linkFilter === "internal") {
+      return link.type === "internal";
+    } else if (linkFilter === "external") {
+      return link.type === "external";
+    } else if (linkFilter === "special") {
+      return ["email", "phone", "anchor", "javascript", "ftp", "file"].includes(
+        link.type
+      );
+    }
+    return true; // 显示所有链接
+  });
+
+  // 确保当前页不超过过滤后的数据总数
+  const maxLinkPage = Math.ceil(filteredLinks.length / pageSize);
+  const currentLinkPage = Math.min(linkPage, maxLinkPage || 1);
+
+  const paginatedLinks = filteredLinks.slice(
+    (currentLinkPage - 1) * pageSize,
+    currentLinkPage * pageSize
   );
 
   const foundAnalytics = seoData.analyticsInfo.filter(tool => tool.found);
@@ -540,6 +640,29 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
           >
             {seoData.imageInfo.length > 0 ? (
               <>
+                <div style={{ marginBottom: 8 }}>
+                  <Space>
+                    <Text strong>过滤:</Text>
+                    <Select
+                      value={imageFilter}
+                      onChange={setImageFilter}
+                      style={{ width: 140 }}
+                      size="small"
+                    >
+                      <Select.Option value="">全部图片</Select.Option>
+                      <Select.Option value="empty-alt">Alt为空</Select.Option>
+                      <Select.Option value="not-optimized">
+                        未优化格式
+                      </Select.Option>
+                      <Select.Option value="svg">SVG格式</Select.Option>
+                      <Select.Option value="webp">WebP格式</Select.Option>
+                    </Select>
+                    <Text type="secondary">
+                      (显示 {filteredImages.length} / {seoData.imageInfo.length}
+                      )
+                    </Text>
+                  </Space>
+                </div>
                 <Table
                   columns={imageColumns}
                   dataSource={paginatedImages}
@@ -548,12 +671,19 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
                   scroll={{ x: 400 }}
                 />
                 <Pagination
-                  current={imagePage}
-                  total={seoData.imageInfo.length}
+                  current={currentImagePage}
+                  total={filteredImages.length}
                   pageSize={pageSize}
-                  onChange={setImagePage}
+                  onChange={page => {
+                    setImagePage(page);
+                  }}
                   size="small"
                   style={{ marginTop: 8, textAlign: "center" }}
+                  showSizeChanger={false}
+                  showQuickJumper={false}
+                  showTotal={(total, range) =>
+                    `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+                  }
                 />
               </>
             ) : (
@@ -586,6 +716,25 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
           >
             {seoData.linksInfo.length > 0 ? (
               <>
+                <div style={{ marginBottom: 8 }}>
+                  <Space>
+                    <Text strong>过滤:</Text>
+                    <Select
+                      value={linkFilter}
+                      onChange={setLinkFilter}
+                      style={{ width: 140 }}
+                      size="small"
+                    >
+                      <Select.Option value="all">全部链接</Select.Option>
+                      <Select.Option value="internal">内部链接</Select.Option>
+                      <Select.Option value="external">外部链接</Select.Option>
+                      <Select.Option value="special">特殊链接</Select.Option>
+                    </Select>
+                    <Text type="secondary">
+                      (显示 {filteredLinks.length} / {seoData.linksInfo.length})
+                    </Text>
+                  </Space>
+                </div>
                 <Table
                   columns={linkColumns}
                   dataSource={paginatedLinks}
@@ -594,12 +743,19 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
                   scroll={{ x: 400 }}
                 />
                 <Pagination
-                  current={linkPage}
-                  total={seoData.linksInfo.length}
+                  current={currentLinkPage}
+                  total={filteredLinks.length}
                   pageSize={pageSize}
-                  onChange={setLinkPage}
+                  onChange={page => {
+                    setLinkPage(page);
+                  }}
                   size="small"
                   style={{ marginTop: 8, textAlign: "center" }}
+                  showSizeChanger={false}
+                  showQuickJumper={false}
+                  showTotal={(total, range) =>
+                    `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+                  }
                 />
               </>
             ) : (
@@ -723,35 +879,90 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
                 <Tag color="green">{seoData.recommendations.length} 条建议</Tag>
               }
             >
-              {seoData.recommendations.map((rec, index) => (
-                <Alert
-                  key={index}
-                  message={
-                    <Space>
-                      <Tag color={getPriorityColor(rec.priority)}>
-                        {rec.priority}
-                      </Tag>
-                      <Tag color="blue">{rec.category}</Tag>
-                    </Space>
-                  }
-                  description={
-                    <div>
-                      <Paragraph style={{ marginBottom: 4 }}>
-                        <Text strong>问题:</Text> {rec.issue}
-                      </Paragraph>
-                      <Paragraph style={{ marginBottom: 0 }}>
-                        <Text strong type="success">
-                          建议:
-                        </Text>{" "}
-                        {rec.suggestion}
-                      </Paragraph>
-                    </div>
-                  }
-                  type="info"
-                  showIcon
-                  style={{ marginBottom: 8 }}
-                />
-              ))}
+              {seoData.recommendations.map((rec, index) => {
+                const { text, urls } = parseImageUrls(rec.suggestion);
+                const currentPage = recommendationImagePage[index] || 1;
+                const urlPageSize = 3; // 每页显示3个链接
+                const totalPages = Math.ceil(urls.length / urlPageSize);
+                const paginatedUrls = urls.slice(
+                  (currentPage - 1) * urlPageSize,
+                  currentPage * urlPageSize
+                );
+
+                return (
+                  <Alert
+                    key={index}
+                    message={
+                      <Space>
+                        <Tag color={getPriorityColor(rec.priority)}>
+                          {rec.priority}
+                        </Tag>
+                        <Tag color="blue">{rec.category}</Tag>
+                      </Space>
+                    }
+                    description={
+                      <div>
+                        <Paragraph style={{ marginBottom: 4 }}>
+                          <Text strong>问题:</Text> {rec.issue}
+                        </Paragraph>
+                        <Paragraph style={{ marginBottom: 0 }}>
+                          <Text strong type="success">
+                            建议:
+                          </Text>{" "}
+                          {text}
+                        </Paragraph>
+                        {urls.length > 0 && (
+                          <div style={{ marginTop: 8 }}>
+                            <Text strong>需要优化的图片:</Text>
+                            <div style={{ marginTop: 4 }}>
+                              {paginatedUrls.map((url, urlIndex) => (
+                                <div key={urlIndex} style={{ marginBottom: 4 }}>
+                                  <a
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      color: "#1890ff",
+                                      textDecoration: "none",
+                                      fontSize: "12px",
+                                      wordBreak: "break-all",
+                                    }}
+                                  >
+                                    {url}
+                                  </a>
+                                </div>
+                              ))}
+                              {totalPages > 1 && (
+                                <Pagination
+                                  current={currentPage}
+                                  total={urls.length}
+                                  pageSize={urlPageSize}
+                                  onChange={page => {
+                                    setRecommendationImagePage(prev => ({
+                                      ...prev,
+                                      [index]: page,
+                                    }));
+                                  }}
+                                  size="small"
+                                  style={{ marginTop: 8 }}
+                                  showSizeChanger={false}
+                                  showQuickJumper={false}
+                                  showTotal={(total, range) =>
+                                    `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+                                  }
+                                />
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    }
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 8 }}
+                  />
+                );
+              })}
             </Card>
           )}
         </Space>
