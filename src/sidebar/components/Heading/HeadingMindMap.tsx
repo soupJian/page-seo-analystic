@@ -17,7 +17,7 @@ import {
   register,
   treeToGraphData,
 } from "@antv/g6";
-import { HeadingInfo } from "../types";
+import { HeadingInfo } from "../../../types";
 
 // 添加图标字体样式
 const style = document.createElement("style");
@@ -229,10 +229,13 @@ class MindmapEdge extends CubicHorizontal {
   }
 
   getKeyPath(attributes: any) {
+    // 使用 G6 默认的 CubicHorizontal 曲线，并在末端追加与目标节点标签宽度一致的水平线
     const path = (super.getKeyPath(attributes) as any) ?? [];
     const isRoot = this.targetNode.id === this.rootId;
-    const labelWidth = getNodeWidth(this.targetNode.id, isRoot);
-
+    const nodes = this.context.model.getNodeData();
+    const targetData = nodes.find((n: any) => n.id === this.targetNode.id);
+    const labelText = (targetData?.label as string) ?? this.targetNode.id;
+    const labelWidth = getNodeWidth(labelText, isRoot);
     const [, tp] = this.getEndpoints(attributes);
     const sign =
       this.sourceNode.getCenter()[0] < this.targetNode.getCenter()[0] ? 1 : -1;
@@ -388,6 +391,47 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
   const graphRef = useRef<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // 简单防抖实现
+  const debounce = <T extends (...args: any[]) => void>(fn: T, delay = 150) => {
+    let timer: number | undefined;
+    return (...args: Parameters<T>) => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => fn(...args), delay);
+    };
+  };
+
+  const updateGraphViewport = () => {
+    if (!graphRef.current || !containerRef.current) return;
+    const newWidth = containerRef.current.clientWidth;
+    const newHeight = containerRef.current.clientHeight;
+    try {
+      if (graphRef.current.resize) {
+        graphRef.current.resize(newWidth, newHeight);
+      } else if (graphRef.current.changeSize) {
+        graphRef.current.changeSize(newWidth, newHeight);
+      }
+      // 重新布局，避免重叠
+      try {
+        graphRef.current.layout?.();
+      } catch {}
+      // 归一缩放到 1，再自适应
+      try {
+        graphRef.current.zoomTo?.(1, {
+          x: newWidth / 2,
+          y: newHeight / 2,
+        } as any);
+      } catch {}
+      graphRef.current.fitView?.();
+    } catch (error) {
+      console.error("更新图形尺寸失败:", error);
+    }
+  };
+
+  const debouncedUpdateRef = useRef<(() => void) | null>(null);
+  if (!debouncedUpdateRef.current) {
+    debouncedUpdateRef.current = debounce(updateGraphViewport, 180);
+  }
+
   useEffect(() => {
     if (!containerRef.current || headings.length === 0) return;
 
@@ -395,9 +439,13 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
       headingsCount: headings.length,
     });
 
-    // 清理之前的图形
+    // 清理之前的图形（加保护，避免内部插件未实例化时报错）
     if (graphRef.current) {
-      graphRef.current.destroy();
+      try {
+        graphRef.current.destroy?.();
+      } catch (e) {
+        console.warn("HeadingMindMap: 销毁旧图形时发生错误，已忽略", e);
+      }
     }
 
     // 构建思维导图数据 - 按照层级结构构建，支持展开/收缩
@@ -497,14 +545,16 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
     console.log("HeadingMindMap: 开始创建图形");
     const graph = new Graph({
       container: containerRef.current,
-      width: containerRef.current?.clientWidth || 800,
-      height: containerRef.current?.clientHeight || 600,
-      scroller: isFullscreen ? true : false,
+      width: containerRef.current?.clientWidth,
+      height: containerRef.current?.clientHeight,
+      // 统一启用 scroller，避免在销毁时因插件未创建导致的 destroy 报错
+      scroller: true,
       data: treeToGraphData(data),
       node: {
         type: "mindmap",
         style: function (this: any, d: any) {
-          const direction = getNodeSide(d, this.getParentData(idOf(d), "tree"));
+          const id = idOf(d);
+          const direction = getNodeSide(d, this.getParentData(id, "tree"));
           const isRoot = idOf(d) === rootId;
 
           // 获取实际显示的文字，限制长度为50个字符
@@ -541,18 +591,19 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
       layout: {
         type: "mindmap",
         direction: "H",
-        getHeight: () => 40, // 增加节点高度
+        getHeight: () => 30,
+        // 使用节点 ID（示例即使用 idOf）计算尺寸，得到更统一的宽度
         getWidth: (node: any) => getNodeWidth(node.id, node.id === rootId),
-        getVGap: () => 20, // 增加垂直间距，减少堆叠
-        getHGap: () => 200, // 进一步增加水平间距，避免文字重叠
+        // 间距严格对齐示例
+        getVGap: () => 6,
+        getHGap: () => 60,
         animation: false,
       },
-      behaviors: isFullscreen
-        ? ["drag-canvas", "zoom-canvas", "collapse-expand-tree"]
-        : ["drag-canvas", "collapse-expand-tree"],
+      // 行为统一保持，缩放通过按钮控制；滚轮在非全屏时通过外层 wrapper 阻止默认即可
+      behaviors: ["drag-canvas", "collapse-expand-tree"],
       transforms: ["assign-color-by-branch"],
       animation: false,
-    });
+    } as any);
 
     console.log("HeadingMindMap: 图形创建完成");
 
@@ -572,10 +623,14 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
     // 清理函数
     return () => {
       if (graphRef.current) {
-        graphRef.current.destroy();
+        try {
+          graphRef.current.destroy?.();
+        } catch (e) {
+          console.warn("HeadingMindMap: 卸载时销毁图形发生错误，已忽略", e);
+        }
       }
     };
-  }, [headings, width, height, isFullscreen]);
+  }, [headings, width, height]);
 
   // 监听全屏状态变化，重新设置 canvas 尺寸
   useEffect(() => {
@@ -624,40 +679,30 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
 
   const handleReset = () => {
     if (graphRef.current) {
-      graphRef.current.fitView();
+      try {
+        // 重置视图时重新布局，避免在尺寸切换后出现的重叠
+        if (graphRef.current.layout) {
+          graphRef.current.layout();
+        }
+        graphRef.current.fitView?.();
+      } catch {}
     }
   };
 
   const handleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
+    const next = !isFullscreen;
+    setIsFullscreen(next);
 
-    // 全屏切换后重新设置 canvas 尺寸
-    setTimeout(() => {
-      if (graphRef.current && containerRef.current) {
-        const newWidth = containerRef.current.clientWidth;
-        const newHeight = containerRef.current.clientHeight;
+    // 通知侧边栏调整宽度
+    try {
+      const evt = new CustomEvent("pa:mindmap-fullscreen", {
+        detail: { fullscreen: next },
+      });
+      window.dispatchEvent(evt);
+    } catch {}
 
-        // 更新图形尺寸 - 使用正确的 API
-        try {
-          if (graphRef.current.resize) {
-            graphRef.current.resize(newWidth, newHeight);
-          } else if (graphRef.current.changeSize) {
-            graphRef.current.changeSize(newWidth, newHeight);
-          } else {
-            console.log("无法更新图形尺寸，只重新居中");
-          }
-
-          // 重新居中
-          setTimeout(() => {
-            if (graphRef.current && graphRef.current.fitView) {
-              graphRef.current.fitView();
-            }
-          }, 100);
-        } catch (error) {
-          console.error("全屏按钮更新图形尺寸失败:", error);
-        }
-      }
-    }, 50); // 等待 DOM 更新完成
+    // 统一交给防抖的 viewport 更新逻辑
+    setTimeout(() => debouncedUpdateRef.current?.(), 50);
   };
 
   if (headings.length === 0) {
@@ -676,19 +721,49 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
     if (!wrapper) return;
 
     const handleWheel = (e: WheelEvent) => {
-      if (!isFullscreen) {
-        e.preventDefault();
+      // 统一拦截，自己管理缩放
+      e.preventDefault();
+      if (!graphRef.current || !isFullscreen) return;
+
+      try {
+        const currentZoom = graphRef.current.getZoom?.() ?? 1;
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
+        const newZoom = Math.max(0.1, Math.min(3, currentZoom * factor));
+
+        const rect = (
+          containerRef.current as HTMLDivElement
+        ).getBoundingClientRect();
+        const point = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        } as any;
+        if (graphRef.current.zoomTo) {
+          graphRef.current.zoomTo(newZoom, point);
+        } else if (graphRef.current.zoom) {
+          const delta = newZoom / currentZoom;
+          graphRef.current.zoom(delta, point);
+        }
+      } catch (err) {
+        console.warn("滚轮缩放失败", err);
       }
     };
 
-    if (!isFullscreen) {
-      wrapper.addEventListener("wheel", handleWheel, { passive: false });
-    }
-
+    wrapper.addEventListener("wheel", handleWheel, { passive: false });
     return () => {
       wrapper.removeEventListener("wheel", handleWheel as EventListener);
     };
   }, [isFullscreen]);
+
+  // 监听容器尺寸变化，自动调整画布尺寸（防抖）
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const element = containerRef.current;
+    const observer = new ResizeObserver(() => {
+      debouncedUpdateRef.current?.();
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div

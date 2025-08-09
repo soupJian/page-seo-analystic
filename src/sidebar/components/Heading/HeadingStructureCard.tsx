@@ -2,7 +2,7 @@ import React from "react";
 import { Card, Space, Tag, Empty, Alert } from "antd";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { HeadingInfo } from "../../../types";
-import HeadingMindMap from "../../HeadingMindMap";
+import HeadingMindMap from "./HeadingMindMap";
 
 interface HeadingStructureCardProps {
   headings: HeadingInfo[];

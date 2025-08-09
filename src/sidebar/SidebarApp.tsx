@@ -81,36 +81,6 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
     import("../utils/export").then(m => m.exportToCsv(data, filename));
   };
 
-  // const getPriorityColor = (priority: string) => {
-  //   switch (priority.toLowerCase()) {
-  //     case "high":
-  //       return "red";
-  //     case "medium":
-  //       return "orange";
-  //     case "low":
-  //       return "green";
-  //     default:
-  //       return "blue";
-  //   }
-  // };
-
-  // 解析优化建议中的图片链接
-  // const parseImageUrls = (suggestion: string) => {
-  //   const urlMatch = suggestion.match(
-  //     /需要优化的图片：(.+?)(?:\s+等\d+张图片)?$/
-  //   );
-  //   if (!urlMatch) return { text: suggestion, urls: [] };
-  //
-  //   const urlText = urlMatch[1];
-  //   const urls = urlText.split(", ").filter(url => url.trim());
-  //   const text = suggestion.replace(
-  //     /需要优化的图片：.+?(?:\s+等\d+张图片)?$/,
-  //     ""
-  //   );
-  //
-  //   return { text: text.trim(), urls };
-  // };
-
   // Loading state with full-height container
   if (loading) {
     return (

@@ -18,13 +18,6 @@ export const imageRules: ImageRule[] = [
     condition: (data: SeoAnalysisData) => Boolean(data.imageInfo.some(img => !img.alt || img.alt.trim() === ''))
   },
   {
-    category: '图片优化',
-    issue: '图片Alt属性为空',
-    suggestion: '为没有Alt属性的图片添加描述性的Alt文本',
-    priority: 'medium',
-    condition: (data: SeoAnalysisData) => Boolean(data.imageInfo.some(img => img.alt === '' || img.alt === '-'))
-  },
-  {
     category: '性能优化',
     issue: '图片未优化',
     suggestion: '使用适当的图片格式和大小，考虑使用WebP格式和懒加载',
