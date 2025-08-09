@@ -359,6 +359,42 @@ class AssignColorByBranch extends BaseTransform {
   }
 }
 
+// 按深度分配颜色（根节点灰，其余不同层级不同色）
+class AssignColorByDepth extends BaseTransform {
+  static defaultOptions = {
+    colorsByDepth: [
+      "#BFBFBF", // depth 0 root
+      "#1783FF",
+      "#F08F56",
+      "#60C42D",
+      "#7863FF",
+      "#DB9D0D",
+      "#00C9C9",
+      "#FF80CA",
+      "#2491B3",
+      "#17C76F",
+    ],
+  } as any;
+
+  constructor(context: any, options: any) {
+    super(
+      context,
+      Object.assign({}, AssignColorByDepth.defaultOptions, options)
+    );
+  }
+
+  beforeDraw(input: any) {
+    const nodes = this.context.model.getNodeData();
+    nodes.forEach((node: any) => {
+      const depth = Math.max(0, node.depth || 0);
+      node.style ||= {};
+      node.style.color =
+        this.options.colorsByDepth[depth % this.options.colorsByDepth.length];
+    });
+    return input;
+  }
+}
+
 // 注册自定义组件
 register(ExtensionCategory.NODE, "mindmap", MindmapNode);
 register(ExtensionCategory.EDGE, "mindmap", MindmapEdge);
@@ -371,6 +407,11 @@ register(
   ExtensionCategory.TRANSFORM,
   "assign-color-by-branch",
   AssignColorByBranch
+);
+register(
+  ExtensionCategory.TRANSFORM,
+  "assign-color-by-depth",
+  AssignColorByDepth
 );
 
 // 获取节点方向
@@ -410,16 +451,19 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
       } else if (graphRef.current.changeSize) {
         graphRef.current.changeSize(newWidth, newHeight);
       }
-      // 重新布局，避免重叠
+      // 根据内容边界与容器自动缩放
       try {
-        graphRef.current.layout?.();
-      } catch {}
-      // 归一缩放到 1，再自适应
-      try {
-        graphRef.current.zoomTo?.(1, {
-          x: newWidth / 2,
-          y: newHeight / 2,
-        } as any);
+        const bbox = (graphRef.current as any)?.canvas?.getBBox?.();
+        if (bbox) {
+          const padding = 20;
+          const sx = (newWidth - padding * 2) / (bbox.width || newWidth);
+          const sy = (newHeight - padding * 2) / (bbox.height || newHeight);
+          const scale = Math.min(sx, sy, 1.0);
+          graphRef.current.zoomTo?.(scale, {
+            x: newWidth / 2,
+            y: newHeight / 2,
+          } as any);
+        }
       } catch {}
       graphRef.current.fitView?.();
     } catch (error) {
@@ -560,10 +604,15 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
           // 获取实际显示的文字，限制长度为50个字符
           const displayText: string =
             (d.label as string) || (idOf(d) as string);
-          const truncatedText =
-            displayText.length > 50
-              ? displayText.substring(0, 50) + "..."
-              : displayText;
+          const maxRoot = 24;
+          const maxNode = 28;
+          const truncatedText = isRoot
+            ? displayText.length > maxRoot
+              ? displayText.substring(0, maxRoot) + "..."
+              : displayText
+            : displayText.length > maxNode
+            ? displayText.substring(0, maxNode) + "..."
+            : displayText;
 
           return {
             direction,
@@ -584,6 +633,7 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
         style: {
           lineWidth: 3,
           stroke: function (this: any, data: any) {
+            // 使用目标节点的 style.color，按深度分配
             return this.getNodeData(data.target)?.style?.color || "#99ADD1";
           },
         },
@@ -594,14 +644,14 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
         getHeight: () => 30,
         // 使用节点 ID（示例即使用 idOf）计算尺寸，得到更统一的宽度
         getWidth: (node: any) => getNodeWidth(node.id, node.id === rootId),
-        // 间距严格对齐示例
-        getVGap: () => 6,
-        getHGap: () => 60,
+        // 保持舒展的弧线间距；通过缩放适配容器，而不是压缩间距
+        getVGap: () => 24,
+        getHGap: () => 180,
         animation: false,
       },
       // 行为统一保持，缩放通过按钮控制；滚轮在非全屏时通过外层 wrapper 阻止默认即可
       behaviors: ["drag-canvas", "collapse-expand-tree"],
-      transforms: ["assign-color-by-branch"],
+      transforms: ["assign-color-by-depth"],
       animation: false,
     } as any);
 
@@ -609,7 +659,23 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
 
     try {
       graph.once(GraphEvent.AFTER_RENDER, () => {
-        graph.fitView();
+        // 渲染后自适应：根据内容边界与容器大小自动缩放与居中
+        try {
+          const bbox = (graph as any)?.canvas?.getBBox?.();
+          const cw = containerRef.current?.clientWidth || 1;
+          const ch = containerRef.current?.clientHeight || 1;
+          if (bbox && cw > 0 && ch > 0) {
+            const padding = 20; // 给四周留白
+            const sx = (cw - padding * 2) / (bbox.width || cw);
+            const sy = (ch - padding * 2) / (bbox.height || ch);
+            const scale = Math.min(sx, sy, 1.0); // 不超过 1，避免默认放大导致锯齿
+            // 将视图缩放并对齐到左中（根节点通常在中心，示例布局会自然居中）
+            if (graph.zoomTo) {
+              graph.zoomTo(scale, { x: cw / 2, y: ch / 2 } as any);
+            }
+          }
+        } catch {}
+        graph.fitView?.();
       });
 
       graph.render();
@@ -680,9 +746,20 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
   const handleReset = () => {
     if (graphRef.current) {
       try {
-        // 重置视图时重新布局，避免在尺寸切换后出现的重叠
-        if (graphRef.current.layout) {
-          graphRef.current.layout();
+        // 重新布局并根据容器自适应缩放到初始居中
+        graphRef.current.layout?.();
+        const el = containerRef.current as HTMLDivElement;
+        if (el) {
+          const w = el.clientWidth;
+          const h = el.clientHeight;
+          const bbox = (graphRef.current as any)?.canvas?.getBBox?.();
+          if (bbox) {
+            const padding = 20;
+            const sx = (w - padding * 2) / (bbox.width || w);
+            const sy = (h - padding * 2) / (bbox.height || h);
+            const scale = Math.min(sx, sy, 1.0);
+            graphRef.current.zoomTo?.(scale, { x: w / 2, y: h / 2 } as any);
+          }
         }
         graphRef.current.fitView?.();
       } catch {}
