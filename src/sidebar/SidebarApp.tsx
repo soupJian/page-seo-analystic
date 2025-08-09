@@ -1,73 +1,40 @@
 import React, { useState, useEffect } from "react";
-import {
-  Card,
-  Table,
-  Button,
-  Tag,
-  Alert,
-  Spin,
-  Pagination,
-  Space,
-  Typography,
-  Divider,
-  Empty,
-  Result,
-  Row,
-  Col,
-  Statistic,
-  Progress,
-  Tooltip,
-  Image,
-  Select,
-} from "antd";
+import { Button, Alert, Spin, Space, Typography, Empty, Result } from "antd";
 import {
   ReloadOutlined,
-  ExportOutlined,
-  LinkOutlined,
-  PictureOutlined,
-  InfoCircleOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
   WarningOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Paragraph } = Typography;
 
 // 导入统一类型定义
 import { SeoData } from "../types";
+import HeadingMindMap from "./HeadingMindMap";
+
+// 导入组件
+import BasicInfoCard from "./components/BasicInfoCard";
+import HeadingStructureCard from "./components/HeadingStructureCard";
+import RecommendationsCard from "./components/RecommendationsCard";
+import ImageSection from "./components/ImageSection";
+import LinkSection from "./components/LinkSection";
+import StructuredDataCard from "./components/StructuredDataCard";
+import AnalyticsCard from "./components/AnalyticsCard";
+import SpellCheckCard from "./components/SpellCheckCard";
 
 interface SidebarAppProps {
   onReanalyze: () => void;
 }
-
 const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
   const [seoData, setSeoData] = useState<SeoData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [imagePage, setImagePage] = useState(1);
-  const [linkPage, setLinkPage] = useState(1);
-  const [imageFilter, setImageFilter] = useState("");
-  const [linkFilter, setLinkFilter] = useState("all"); // 'all', 'internal', 'external'
+
   const [recommendationImagePage, setRecommendationImagePage] = useState<
     Record<number, number>
   >({});
+
   const pageSize = 10;
-
-  // 当过滤器变化时重置分页
-  useEffect(() => {
-    setImagePage(1);
-  }, [imageFilter]);
-
-  useEffect(() => {
-    setLinkPage(1);
-  }, [linkFilter]);
-
-  // 当数据变化时重置分页
-  useEffect(() => {
-    setImagePage(1);
-    setLinkPage(1);
-  }, [seoData]);
 
   // 处理重新分析
   const handleReanalyze = () => {
@@ -115,22 +82,7 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
   }, []);
 
   const exportToExcel = (data: any[], filename: string) => {
-    const csvContent = [
-      Object.keys(data[0]).join(","),
-      ...data.map(row =>
-        Object.values(row)
-          .map(value => `"${value}"`)
-          .join(",")
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${filename}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    import("../utils/export").then(m => m.exportToCsv(data, filename));
   };
 
   const getPriorityColor = (priority: string) => {
@@ -143,25 +95,6 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
         return "green";
       default:
         return "blue";
-    }
-  };
-
-  const getHeadingTagColor = (level: number) => {
-    switch (level) {
-      case 1:
-        return "red";
-      case 2:
-        return "orange";
-      case 3:
-        return "yellow";
-      case 4:
-        return "green";
-      case 5:
-        return "blue";
-      case 6:
-        return "purple";
-      default:
-        return "default";
     }
   };
 
@@ -185,32 +118,23 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
   // Loading state with full-height container
   if (loading) {
     return (
-      <div
-        style={{ height: "100vh", display: "flex", flexDirection: "column" }}
-      >
-        <div style={{ padding: "16px", borderBottom: "1px solid #f0f0f0" }}>
-          <Title level={4} style={{ margin: 0 }}>
+      <div className="h-screen flex flex-col">
+        <div className="p-4 border-b border-gray-200">
+          <Title level={4} className="m-0">
             页面分析工具
           </Title>
         </div>
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: "40px 16px",
-          }}
-        >
+        <div className="flex-1 flex flex-col justify-center items-center p-10">
           <Spin
             size="large"
-            indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />}
+            indicator={<LoadingOutlined className="text-5xl" spin />}
           />
-          <Title level={5} style={{ marginTop: 16, marginBottom: 8 }}>
+          <Title level={5} className="mt-4 mb-2">
             正在分析页面
           </Title>
-          <Text type="secondary">正在收集SEO数据，请稍候...</Text>
+          <Typography.Text type="secondary">
+            正在收集SEO数据，请稍候...
+          </Typography.Text>
         </div>
       </div>
     );
@@ -219,24 +143,13 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
   // Error state
   if (error) {
     return (
-      <div
-        style={{ height: "100vh", display: "flex", flexDirection: "column" }}
-      >
-        <div style={{ padding: "16px", borderBottom: "1px solid #f0f0f0" }}>
-          <Title level={4} style={{ margin: 0 }}>
+      <div className="h-screen flex flex-col">
+        <div className="p-4 border-b border-gray-200">
+          <Title level={4} className="m-0">
             页面分析工具
           </Title>
         </div>
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: "40px 16px",
-          }}
-        >
+        <div className="flex-1 flex flex-col justify-center items-center p-10">
           <Result
             status="error"
             title="分析失败"
@@ -259,24 +172,13 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
   // No data state
   if (!seoData) {
     return (
-      <div
-        style={{ height: "100vh", display: "flex", flexDirection: "column" }}
-      >
-        <div style={{ padding: "16px", borderBottom: "1px solid #f0f0f0" }}>
-          <Title level={4} style={{ margin: 0 }}>
+      <div className="h-screen flex flex-col">
+        <div className="p-4 border-b border-gray-200">
+          <Title level={4} className="m-0">
             页面分析工具
           </Title>
         </div>
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: "40px 16px",
-          }}
-        >
+        <div className="flex-1 flex flex-col justify-center items-center p-10">
           <Result
             status="info"
             title="暂无数据"
@@ -296,211 +198,14 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
     );
   }
 
-  const imageColumns = [
-    {
-      title: "图片",
-      dataIndex: "src",
-      key: "src",
-      width: 80,
-      render: (src: string, record: any) => (
-        <Image
-          src={src}
-          alt={record.alt || "图片"}
-          width={60}
-          height={60}
-          style={{ objectFit: "cover", borderRadius: "4px" }}
-          fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
-        />
-      ),
-    },
-    {
-      title: "链接",
-      dataIndex: "src",
-      key: "link",
-      render: (src: string) => (
-        <Tooltip title={src}>
-          <a
-            href={src}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "block",
-              maxWidth: "200px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {src}
-          </a>
-        </Tooltip>
-      ),
-    },
-    {
-      title: "Alt文本",
-      dataIndex: "alt",
-      key: "alt",
-      render: (alt: string) => (
-        <Text type={alt ? undefined : "secondary"} italic={!alt}>
-          {alt || "无Alt文本"}
-        </Text>
-      ),
-    },
-    {
-      title: "尺寸",
-      key: "size",
-      render: (_: any, record: any) => (
-        <Tag color="blue">
-          {record.width}×{record.height}
-        </Tag>
-      ),
-    },
-    {
-      title: "格式",
-      key: "format",
-      render: (_: any, record: any) => {
-        const format = record.format || "other";
-        const formatConfig = {
-          svg: { color: "purple", text: "SVG" },
-          webp: { color: "green", text: "WebP" },
-          other: { color: "orange", text: "其他格式" },
-        };
-
-        const config =
-          formatConfig[format as keyof typeof formatConfig] ||
-          formatConfig.other;
-        return <Tag color={config.color}>{config.text}</Tag>;
-      },
-    },
-  ];
-
-  const linkColumns = [
-    {
-      title: "链接",
-      dataIndex: "href",
-      key: "href",
-      render: (href: string) => (
-        <Tooltip title={href}>
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "block",
-              maxWidth: "200px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {href}
-          </a>
-        </Tooltip>
-      ),
-    },
-    {
-      title: "文本",
-      dataIndex: "text",
-      key: "text",
-      render: (text: string) => (
-        <Text type={text ? undefined : "secondary"}>{text || "-"}</Text>
-      ),
-    },
-    {
-      title: "类型",
-      dataIndex: "type",
-      key: "type",
-      render: (type: string) => {
-        const typeConfig = {
-          internal: { color: "green", text: "内部链接" },
-          external: { color: "blue", text: "外部链接" },
-          email: { color: "purple", text: "邮箱链接" },
-          phone: { color: "orange", text: "电话链接" },
-          anchor: { color: "cyan", text: "锚点链接" },
-          javascript: { color: "red", text: "JavaScript" },
-          ftp: { color: "magenta", text: "FTP链接" },
-          file: { color: "geekblue", text: "文件链接" },
-        };
-
-        const config = typeConfig[type as keyof typeof typeConfig] || {
-          color: "default",
-          text: type,
-        };
-        return <Tag color={config.color}>{config.text}</Tag>;
-      },
-    },
-  ];
-
-  // 图片过滤逻辑
-  const filteredImages = seoData.imageInfo.filter(img => {
-    const hasEmptyAlt = !img.alt || img.alt.trim() === "" || img.alt === "-";
-    const format = img.format || "other";
-
-    if (imageFilter === "empty-alt") {
-      return hasEmptyAlt;
-    } else if (imageFilter === "not-optimized") {
-      return format !== "svg" && format !== "webp";
-    } else if (imageFilter === "svg") {
-      return format === "svg";
-    } else if (imageFilter === "webp") {
-      return format === "webp";
-    }
-    return true; // 显示所有图片
-  });
-
-  // 确保当前页不超过过滤后的数据总数
-  const maxImagePage = Math.ceil(filteredImages.length / pageSize);
-  const currentImagePage = Math.min(imagePage, maxImagePage || 1);
-
-  const paginatedImages = filteredImages.slice(
-    (currentImagePage - 1) * pageSize,
-    currentImagePage * pageSize
-  );
-
-  // 链接过滤逻辑
-  const filteredLinks = seoData.linksInfo.filter(link => {
-    if (linkFilter === "internal") {
-      return link.type === "internal";
-    } else if (linkFilter === "external") {
-      return link.type === "external";
-    } else if (linkFilter === "special") {
-      return ["email", "phone", "anchor", "javascript", "ftp", "file"].includes(
-        link.type
-      );
-    }
-    return true; // 显示所有链接
-  });
-
-  // 确保当前页不超过过滤后的数据总数
-  const maxLinkPage = Math.ceil(filteredLinks.length / pageSize);
-  const currentLinkPage = Math.min(linkPage, maxLinkPage || 1);
-
-  const paginatedLinks = filteredLinks.slice(
-    (currentLinkPage - 1) * pageSize,
-    currentLinkPage * pageSize
-  );
-
   const foundAnalytics = seoData.analyticsInfo.filter(tool => tool.found);
 
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <div
-        style={{
-          padding: "16px",
-          borderBottom: "1px solid #f0f0f0",
-          flexShrink: 0,
-        }}
-      >
-        <Space style={{ width: "100%", justifyContent: "space-between" }}>
-          <Title level={4} style={{ margin: 0 }}>
+      <div className="p-4 border-b border-gray-200 flex-shrink-0">
+        <Space className="w-full justify-between">
+          <Title level={4} className="m-0">
             页面分析工具
           </Title>
           <Button
@@ -514,456 +219,44 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, overflow: "auto", padding: "16px" }}>
-        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+      <div className="flex-1 overflow-auto p-4">
+        <Space direction="vertical" size="middle" className="w-full">
           {/* 基本信息 */}
-          <Card
-            title={
-              <Space>
-                <InfoCircleOutlined />
-                基本信息
-              </Space>
-            }
-            size="small"
-          >
-            <Row gutter={[16, 8]}>
-              <Col span={24}>
-                <Paragraph>
-                  <Text strong>页面标题:</Text>
-                  <br />
-                  <Text>{seoData.basicInfo.title || "-"}</Text>
-                </Paragraph>
-              </Col>
-            </Row>
-            <Row gutter={[16, 8]}>
-              <Col span={24}>
-                <Paragraph>
-                  <Text strong>Meta描述:</Text>
-                  <br />
-                  <Text>{seoData.metaInfo.description || "-"}</Text>
-                </Paragraph>
-              </Col>
-            </Row>
-            <Row gutter={[16, 8]}>
-              <Col span={24}>
-                <Paragraph>
-                  <Text strong>关键词:</Text>
-                  <br />
-                  <Text>{seoData.metaInfo.keywords || "-"}</Text>
-                </Paragraph>
-              </Col>
-            </Row>
-            <Row gutter={[16, 8]}>
-              <Col span={12}>
-                <Paragraph>
-                  <Text strong>当前URL:</Text>
-                  <br />
-                  <Text
-                    copyable
-                    style={{ fontSize: "12px", wordBreak: "break-all" }}
-                  >
-                    {seoData.basicInfo.url}
-                  </Text>
-                </Paragraph>
-              </Col>
-              <Col span={12}>
-                <Paragraph>
-                  <Text strong>Canonical URL:</Text>
-                  <br />
-                  {seoData.metaInfo.canonical ? (
-                    <Text
-                      copyable
-                      style={{ fontSize: "12px", wordBreak: "break-all" }}
-                    >
-                      {seoData.metaInfo.canonical}
-                    </Text>
-                  ) : (
-                    <Text style={{ fontSize: "12px", color: "#999" }}>-</Text>
-                  )}
-                </Paragraph>
-              </Col>
-            </Row>
-          </Card>
+          <BasicInfoCard
+            basicInfo={seoData.basicInfo}
+            metaInfo={seoData.metaInfo}
+          />
 
           {/* 标题结构 */}
-          <Card
-            title={
-              <Space>
-                <InfoCircleOutlined />
-                标题结构
-              </Space>
-            }
-            size="small"
-            extra={
-              <Tag color="blue">{seoData.headingStructure.length} 个标题</Tag>
-            }
-          >
-            {seoData.headingStructure.length > 0 ? (
-              <Space wrap>
-                {seoData.headingStructure.map((heading, index) => (
-                  <Tag
-                    key={index}
-                    color={getHeadingTagColor(heading.level)}
-                    style={{ marginBottom: 4 }}
-                  >
-                    {heading.tag}: {heading.text}
-                  </Tag>
-                ))}
-              </Space>
-            ) : (
-              <Empty description="未找到标题标签" />
-            )}
-          </Card>
+          <HeadingStructureCard headings={seoData.headingStructure} />
 
           {/* 图片信息 */}
-          <Card
-            title={
-              <Space>
-                <PictureOutlined />
-                图片信息
-              </Space>
-            }
-            size="small"
-            extra={
-              <Space>
-                <Tag color="blue">{seoData.imageInfo.length} 张图片</Tag>
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<ExportOutlined />}
-                  onClick={() => exportToExcel(seoData.imageInfo, "images")}
-                >
-                  导出
-                </Button>
-              </Space>
-            }
-          >
-            {seoData.imageInfo.length > 0 ? (
-              <>
-                <div style={{ marginBottom: 8 }}>
-                  <Space>
-                    <Text strong>过滤:</Text>
-                    <Select
-                      value={imageFilter}
-                      onChange={setImageFilter}
-                      style={{ width: 140 }}
-                      size="small"
-                    >
-                      <Select.Option value="">全部图片</Select.Option>
-                      <Select.Option value="empty-alt">Alt为空</Select.Option>
-                      <Select.Option value="not-optimized">
-                        未优化格式
-                      </Select.Option>
-                      <Select.Option value="svg">SVG格式</Select.Option>
-                      <Select.Option value="webp">WebP格式</Select.Option>
-                    </Select>
-                    <Text type="secondary">
-                      (显示 {filteredImages.length} / {seoData.imageInfo.length}
-                      )
-                    </Text>
-                  </Space>
-                </div>
-                <Table
-                  columns={imageColumns}
-                  dataSource={paginatedImages}
-                  pagination={false}
-                  size="small"
-                  scroll={{ x: 400 }}
-                />
-                <Pagination
-                  current={currentImagePage}
-                  total={filteredImages.length}
-                  pageSize={pageSize}
-                  onChange={page => {
-                    setImagePage(page);
-                  }}
-                  size="small"
-                  style={{ marginTop: 8, textAlign: "center" }}
-                  showSizeChanger={false}
-                  showQuickJumper={false}
-                  showTotal={(total, range) =>
-                    `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
-                  }
-                />
-              </>
-            ) : (
-              <Empty description="未找到图片" />
-            )}
-          </Card>
+          <ImageSection
+            imageInfo={seoData.imageInfo}
+            onExport={exportToExcel}
+          />
 
           {/* 链接信息 */}
-          <Card
-            title={
-              <Space>
-                <LinkOutlined />
-                链接信息
-              </Space>
-            }
-            size="small"
-            extra={
-              <Space>
-                <Tag color="blue">{seoData.linksInfo.length} 个链接</Tag>
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<ExportOutlined />}
-                  onClick={() => exportToExcel(seoData.linksInfo, "links")}
-                >
-                  导出
-                </Button>
-              </Space>
-            }
-          >
-            {seoData.linksInfo.length > 0 ? (
-              <>
-                <div style={{ marginBottom: 8 }}>
-                  <Space>
-                    <Text strong>过滤:</Text>
-                    <Select
-                      value={linkFilter}
-                      onChange={setLinkFilter}
-                      style={{ width: 140 }}
-                      size="small"
-                    >
-                      <Select.Option value="all">全部链接</Select.Option>
-                      <Select.Option value="internal">内部链接</Select.Option>
-                      <Select.Option value="external">外部链接</Select.Option>
-                      <Select.Option value="special">特殊链接</Select.Option>
-                    </Select>
-                    <Text type="secondary">
-                      (显示 {filteredLinks.length} / {seoData.linksInfo.length})
-                    </Text>
-                  </Space>
-                </div>
-                <Table
-                  columns={linkColumns}
-                  dataSource={paginatedLinks}
-                  pagination={false}
-                  size="small"
-                  scroll={{ x: 400 }}
-                />
-                <Pagination
-                  current={currentLinkPage}
-                  total={filteredLinks.length}
-                  pageSize={pageSize}
-                  onChange={page => {
-                    setLinkPage(page);
-                  }}
-                  size="small"
-                  style={{ marginTop: 8, textAlign: "center" }}
-                  showSizeChanger={false}
-                  showQuickJumper={false}
-                  showTotal={(total, range) =>
-                    `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
-                  }
-                />
-              </>
-            ) : (
-              <Empty description="未找到链接" />
-            )}
-          </Card>
+          <LinkSection linksInfo={seoData.linksInfo} onExport={exportToExcel} />
 
           {/* 结构化数据 */}
-          {seoData.structuredData.length > 0 && (
-            <Card
-              title={
-                <Space>
-                  <InfoCircleOutlined />
-                  结构化数据
-                </Space>
-              }
-              size="small"
-              extra={
-                <Tag color="blue">{seoData.structuredData.length} 个结构</Tag>
-              }
-            >
-              {seoData.structuredData.map((item, index) => (
-                <Card key={index} size="small" style={{ marginBottom: 8 }}>
-                  <Space>
-                    <Tag color="green">{item.type}</Tag>
-                    {item.name && <Tag color="blue">{item.name}</Tag>}
-                  </Space>
-                  {item.products && item.products.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <Text strong>产品信息:</Text>
-                      {item.products.map((product, pIndex) => (
-                        <Card
-                          key={pIndex}
-                          size="small"
-                          style={{ marginTop: 4 }}
-                        >
-                          <Row gutter={[8, 4]}>
-                            <Col span={12}>
-                              <Text strong>名称:</Text> {product.name}
-                            </Col>
-                            <Col span={12}>
-                              <Text strong>品牌:</Text> {product.brand}
-                            </Col>
-                            <Col span={12}>
-                              <Text strong>价格:</Text> {product.price}{" "}
-                              {product.currency}
-                            </Col>
-                            <Col span={12}>
-                              <Text strong>SKU:</Text> {product.sku}
-                            </Col>
-                          </Row>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </Card>
-              ))}
-            </Card>
-          )}
+          <StructuredDataCard structuredData={seoData.structuredData} />
 
           {/* 分析工具 */}
-          {foundAnalytics.length > 0 && (
-            <Card
-              title={
-                <Space>
-                  <InfoCircleOutlined />
-                  分析工具
-                </Space>
-              }
-              size="small"
-              extra={<Tag color="blue">{foundAnalytics.length} 个工具</Tag>}
-            >
-              <Space wrap>
-                {foundAnalytics.map((tool, index) => (
-                  <Tag key={index} color="blue">
-                    {tool.name}: {tool.id}
-                  </Tag>
-                ))}
-              </Space>
-            </Card>
-          )}
+          <AnalyticsCard analyticsInfo={seoData.analyticsInfo} />
 
           {/* 拼写检查 */}
-          {seoData.spellCheck.length > 0 && (
-            <Card
-              title={
-                <Space>
-                  <WarningOutlined />
-                  拼写检查
-                </Space>
-              }
-              size="small"
-              extra={
-                <Tag color="orange">{seoData.spellCheck.length} 个问题</Tag>
-              }
-            >
-              {seoData.spellCheck.map((item, index) => (
-                <Alert
-                  key={index}
-                  message={`"${item.word}" 可能拼写错误`}
-                  description={`建议: ${item.suggestions.join(", ")}`}
-                  type="warning"
-                  showIcon
-                  style={{ marginBottom: 8 }}
-                />
-              ))}
-            </Card>
-          )}
+          <SpellCheckCard spellCheck={seoData.spellCheck} />
 
           {/* 优化建议 */}
           {seoData.recommendations.length > 0 && (
-            <Card
-              title={
-                <Space>
-                  <CheckCircleOutlined />
-                  优化建议
-                </Space>
+            <RecommendationsCard
+              recommendations={seoData.recommendations}
+              recommendationImagePage={recommendationImagePage}
+              onRecommendationImagePageChange={(index, page) =>
+                setRecommendationImagePage(prev => ({ ...prev, [index]: page }))
               }
-              size="small"
-              extra={
-                <Tag color="green">{seoData.recommendations.length} 条建议</Tag>
-              }
-            >
-              {seoData.recommendations.map((rec, index) => {
-                const { text, urls } = parseImageUrls(rec.suggestion);
-                const currentPage = recommendationImagePage[index] || 1;
-                const urlPageSize = 3; // 每页显示3个链接
-                const totalPages = Math.ceil(urls.length / urlPageSize);
-                const paginatedUrls = urls.slice(
-                  (currentPage - 1) * urlPageSize,
-                  currentPage * urlPageSize
-                );
-
-                return (
-                  <Alert
-                    key={index}
-                    message={
-                      <Space>
-                        <Tag color={getPriorityColor(rec.priority)}>
-                          {rec.priority}
-                        </Tag>
-                        <Tag color="blue">{rec.category}</Tag>
-                      </Space>
-                    }
-                    description={
-                      <div>
-                        <Paragraph style={{ marginBottom: 4 }}>
-                          <Text strong>问题:</Text> {rec.issue}
-                        </Paragraph>
-                        <Paragraph style={{ marginBottom: 0 }}>
-                          <Text strong type="success">
-                            建议:
-                          </Text>{" "}
-                          {text}
-                        </Paragraph>
-                        {urls.length > 0 && (
-                          <div style={{ marginTop: 8 }}>
-                            <Text strong>需要优化的图片:</Text>
-                            <div style={{ marginTop: 4 }}>
-                              {paginatedUrls.map((url, urlIndex) => (
-                                <div key={urlIndex} style={{ marginBottom: 4 }}>
-                                  <a
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{
-                                      color: "#1890ff",
-                                      textDecoration: "none",
-                                      fontSize: "12px",
-                                      wordBreak: "break-all",
-                                    }}
-                                  >
-                                    {url}
-                                  </a>
-                                </div>
-                              ))}
-                              {totalPages > 1 && (
-                                <Pagination
-                                  current={currentPage}
-                                  total={urls.length}
-                                  pageSize={urlPageSize}
-                                  onChange={page => {
-                                    setRecommendationImagePage(prev => ({
-                                      ...prev,
-                                      [index]: page,
-                                    }));
-                                  }}
-                                  size="small"
-                                  style={{ marginTop: 8 }}
-                                  showSizeChanger={false}
-                                  showQuickJumper={false}
-                                  showTotal={(total, range) =>
-                                    `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
-                                  }
-                                />
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    }
-                    type="info"
-                    showIcon
-                    style={{ marginBottom: 8 }}
-                  />
-                );
-              })}
-            </Card>
+            />
           )}
         </Space>
       </div>
