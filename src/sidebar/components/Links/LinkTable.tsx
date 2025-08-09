@@ -8,7 +8,7 @@ import {
   Typography,
   Select,
 } from "antd";
-import { LinkInfo } from "../../types";
+import { LinkInfo } from "../../../types";
 
 interface LinkTableProps {
   linksInfo: LinkInfo[];
@@ -64,9 +64,8 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo, onExport }) => {
           javascript: { color: "red", text: "JavaScript" },
           ftp: { color: "magenta", text: "FTP链接" },
           file: { color: "geekblue", text: "文件链接" },
-        };
-
-        const config = typeConfig[type as keyof typeof typeConfig] || {
+        } as const;
+        const config = (typeConfig as any)[type] || {
           color: "default",
           text: type,
         };
@@ -75,7 +74,6 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo, onExport }) => {
     },
   ];
 
-  // 链接过滤逻辑
   const filteredLinks = linksInfo.filter(link => {
     if (linkFilter === "all") return true;
     if (linkFilter === "internal") return link.type === "internal";

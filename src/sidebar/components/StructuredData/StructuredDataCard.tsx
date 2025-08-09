@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, Space, Tag, Row, Col, Typography } from "antd";
 import { InfoCircleOutlined } from "@ant-design/icons";
-import { StructuredDataInfo } from "../../types";
+import { StructuredDataInfo } from "../../../types";
 
 interface StructuredDataCardProps {
   structuredData: StructuredDataInfo[];

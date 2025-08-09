@@ -1,26 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Button, Alert, Spin, Space, Typography, Empty, Result } from "antd";
-import {
-  ReloadOutlined,
-  WarningOutlined,
-  LoadingOutlined,
-} from "@ant-design/icons";
+import { Button, Spin, Space, Typography, Result } from "antd";
+import { ReloadOutlined, LoadingOutlined } from "@ant-design/icons";
 
-const { Title, Paragraph } = Typography;
+const { Title } = Typography;
 
 // 导入统一类型定义
 import { SeoData } from "../types";
-import HeadingMindMap from "./HeadingMindMap";
+// import HeadingMindMap from "./HeadingMindMap";
 
-// 导入组件
-import BasicInfoCard from "./components/BasicInfoCard";
-import HeadingStructureCard from "./components/HeadingStructureCard";
-import RecommendationsCard from "./components/RecommendationsCard";
-import ImageSection from "./components/ImageSection";
-import LinkSection from "./components/LinkSection";
-import StructuredDataCard from "./components/StructuredDataCard";
-import AnalyticsCard from "./components/AnalyticsCard";
-import SpellCheckCard from "./components/SpellCheckCard";
+// 导入组件（直接到具体文件）
+import BasicInfoCard from "./components/Basic/BasicInfoCard";
+import HeadingStructureCard from "./components/Heading/HeadingStructureCard";
+import RecommendationsCard from "./components/Recommendations/RecommendationsCard";
+import ImageSection from "./components/Images/ImageSection";
+import LinkSection from "./components/Links/LinkSection";
+import StructuredDataCard from "./components/StructuredData/StructuredDataCard";
+import AnalyticsCard from "./components/Analytics/AnalyticsCard";
+import SpellCheckCard from "./components/SpellCheck/SpellCheckCard";
 
 interface SidebarAppProps {
   onReanalyze: () => void;
@@ -34,7 +30,7 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
     Record<number, number>
   >({});
 
-  const pageSize = 10;
+  // const pageSize = 10;
 
   // 处理重新分析
   const handleReanalyze = () => {
@@ -85,35 +81,35 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
     import("../utils/export").then(m => m.exportToCsv(data, filename));
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case "high":
-        return "red";
-      case "medium":
-        return "orange";
-      case "low":
-        return "green";
-      default:
-        return "blue";
-    }
-  };
+  // const getPriorityColor = (priority: string) => {
+  //   switch (priority.toLowerCase()) {
+  //     case "high":
+  //       return "red";
+  //     case "medium":
+  //       return "orange";
+  //     case "low":
+  //       return "green";
+  //     default:
+  //       return "blue";
+  //   }
+  // };
 
   // 解析优化建议中的图片链接
-  const parseImageUrls = (suggestion: string) => {
-    const urlMatch = suggestion.match(
-      /需要优化的图片：(.+?)(?:\s+等\d+张图片)?$/
-    );
-    if (!urlMatch) return { text: suggestion, urls: [] };
-
-    const urlText = urlMatch[1];
-    const urls = urlText.split(", ").filter(url => url.trim());
-    const text = suggestion.replace(
-      /需要优化的图片：.+?(?:\s+等\d+张图片)?$/,
-      ""
-    );
-
-    return { text: text.trim(), urls };
-  };
+  // const parseImageUrls = (suggestion: string) => {
+  //   const urlMatch = suggestion.match(
+  //     /需要优化的图片：(.+?)(?:\s+等\d+张图片)?$/
+  //   );
+  //   if (!urlMatch) return { text: suggestion, urls: [] };
+  //
+  //   const urlText = urlMatch[1];
+  //   const urls = urlText.split(", ").filter(url => url.trim());
+  //   const text = suggestion.replace(
+  //     /需要优化的图片：.+?(?:\s+等\d+张图片)?$/,
+  //     ""
+  //   );
+  //
+  //   return { text: text.trim(), urls };
+  // };
 
   // Loading state with full-height container
   if (loading) {
@@ -198,7 +194,7 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
     );
   }
 
-  const foundAnalytics = seoData.analyticsInfo.filter(tool => tool.found);
+  // const foundAnalytics = seoData.analyticsInfo.filter(tool => tool.found);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">

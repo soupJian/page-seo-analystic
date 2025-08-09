@@ -1,7 +1,7 @@
 import React from "react";
-import { Card, Space, Tag, Typography } from "antd";
+import { Card, Space, Tag } from "antd";
 import { BarChartOutlined } from "@ant-design/icons";
-import { AnalyticsInfo } from "../../types";
+import { AnalyticsInfo } from "../../../types";
 
 interface AnalyticsCardProps {
   analyticsInfo: AnalyticsInfo[];

@@ -8,17 +8,14 @@ import {
   Space,
   Typography,
   Select,
-  Button,
 } from "antd";
-import { ExportOutlined } from "@antv/icons-react";
-import { ImageInfo } from "../../types";
+import { ImageInfo } from "../../../types";
 
 interface ImageTableProps {
   imageInfo: ImageInfo[];
-  onExport: (data: any[], filename: string) => void;
 }
 
-const ImageTable: React.FC<ImageTableProps> = ({ imageInfo, onExport }) => {
+const ImageTable: React.FC<ImageTableProps> = ({ imageInfo }) => {
   const [imageFilter, setImageFilter] = useState("");
   const [currentImagePage, setImagePage] = useState(1);
   const pageSize = 10;
@@ -97,7 +94,6 @@ const ImageTable: React.FC<ImageTableProps> = ({ imageInfo, onExport }) => {
     },
   ];
 
-  // 图片过滤逻辑
   const filteredImages = imageInfo.filter(img => {
     const hasEmptyAlt = !img.alt || img.alt.trim() === "" || img.alt === "-";
     const format = img.format || "other";

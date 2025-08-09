@@ -1,8 +1,8 @@
 import React from "react";
 import { Card, Space, Tag, Button, Empty } from "antd";
 import { PictureOutlined, ExportOutlined } from "@ant-design/icons";
-import { ImageInfo } from "../../types";
-import ImageTable from "./ImageTable";
+import { ImageInfo } from "../../../types";
+import ImageTable from "./ImageTable.tsx";
 
 interface ImageSectionProps {
   imageInfo: ImageInfo[];
@@ -34,7 +34,7 @@ const ImageSection: React.FC<ImageSectionProps> = ({ imageInfo, onExport }) => {
       }
     >
       {imageInfo.length > 0 ? (
-        <ImageTable imageInfo={imageInfo} onExport={onExport} />
+        <ImageTable imageInfo={imageInfo} />
       ) : (
         <Empty description="未找到图片" />
       )}

@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, Space, Row, Col, Typography } from "antd";
 import { InfoCircleOutlined } from "@ant-design/icons";
-import { BasicInfo, MetaInfo } from "../../types";
+import { BasicInfo, MetaInfo } from "../../../types";
 
 const { Paragraph } = Typography;
 

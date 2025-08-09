@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, Space, Tag, Alert } from "antd";
 import { WarningOutlined } from "@ant-design/icons";
-import { SpellCheckInfo } from "../../types";
+import { SpellCheckInfo } from "../../../types";
 
 interface SpellCheckCardProps {
   spellCheck: SpellCheckInfo[];

@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, Space, Tag, Button, Empty } from "antd";
 import { LinkOutlined, ExportOutlined } from "@ant-design/icons";
-import { LinkInfo } from "../../types";
+import { LinkInfo } from "../../../types";
 import LinkTable from "./LinkTable";
 
 interface LinkSectionProps {

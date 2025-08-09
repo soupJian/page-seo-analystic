@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, Space, Tag, Alert, Pagination, Typography } from "antd";
 import { CheckCircleOutlined } from "@ant-design/icons";
-import { RecommendationInfo } from "../../types";
+import { RecommendationInfo } from "../../../types";
 
 const { Paragraph } = Typography;
 
@@ -29,20 +29,17 @@ const RecommendationsCard: React.FC<RecommendationsCardProps> = ({
     }
   };
 
-  // 解析优化建议中的图片链接
   const parseImageUrls = (suggestion: string) => {
     const urlMatch = suggestion.match(
       /需要优化的图片：(.+?)(?:\s+等\d+张图片)?$/
     );
     if (!urlMatch) return { text: suggestion, urls: [] };
-
     const urlText = urlMatch[1];
     const urls = urlText.split(", ").filter(url => url.trim());
     const text = suggestion.replace(
       /需要优化的图片：.+?(?:\s+等\d+张图片)?$/,
       ""
     );
-
     return { text: text.trim(), urls };
   };
 
@@ -60,7 +57,7 @@ const RecommendationsCard: React.FC<RecommendationsCardProps> = ({
       {recommendations.map((rec, index) => {
         const { text, urls } = parseImageUrls(rec.suggestion);
         const currentPage = recommendationImagePage[index] || 1;
-        const urlPageSize = 3; // 每页显示3个链接
+        const urlPageSize = 3;
         const totalPages = Math.ceil(urls.length / urlPageSize);
         const paginatedUrls = urls.slice(
           (currentPage - 1) * urlPageSize,
