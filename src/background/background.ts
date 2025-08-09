@@ -61,11 +61,8 @@ class BackgroundManager {
             });
 
             // 请求content script重新分析页面
-            chrome.tabs.sendMessage(activeTabId, { action: "analyzePage" }, (response) => {
-              console.log("Content script response:", response);
-
+            chrome.tabs.sendMessage(activeTabId, { action: "analyzePage" }, () => {
               if (chrome.runtime.lastError) {
-                console.log("Content script error:", chrome.runtime.lastError);
                 this.sendToSidebar(activeTabId, {
                   type: "ANALYSIS_ERROR",
                   error: "无法连接到页面内容脚本，请刷新页面重试"
@@ -114,6 +111,18 @@ class BackgroundManager {
           message: request.url
         });
 
+        // 触发内容脚本重新分析（处理SPA路由变更不触发onUpdated的情况）
+        setTimeout(() => {
+          chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, () => {
+            if (chrome.runtime.lastError) {
+              this.sendToSidebar(tabId, {
+                type: "ANALYSIS_ERROR",
+                error: "无法连接到页面内容脚本，请刷新页面重试"
+              });
+            }
+          });
+        }, 800);
+
         sendResponse({ success: true });
         return true;
       }
@@ -147,7 +156,7 @@ class BackgroundManager {
                   });
                 } else {
                   // 如果没有缓存数据，请求content script分析页面
-                  chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
+                  chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, () => {
                     if (chrome.runtime.lastError) {
                       this.sendToSidebar(tabId, {
                         type: "ANALYSIS_ERROR",
@@ -168,7 +177,7 @@ class BackgroundManager {
               });
             } else {
               // 如果没有缓存数据，请求content script分析页面
-              chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
+              chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, () => {
                 if (chrome.runtime.lastError) {
                   this.sendToSidebar(tabId, {
                     type: "ANALYSIS_ERROR",
@@ -197,7 +206,7 @@ class BackgroundManager {
 
           // 延迟分析页面，确保内容加载完成
           setTimeout(() => {
-            chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
+            chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, () => {
               if (chrome.runtime.lastError) {
                 this.sendToSidebar(tabId, {
                   type: "ANALYSIS_ERROR",
@@ -225,7 +234,7 @@ class BackgroundManager {
           });
         } else {
           // 请求content script分析页面
-          chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
+          chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, () => {
             if (chrome.runtime.lastError) {
               this.sendToSidebar(tabId, {
                 type: "ANALYSIS_ERROR",
@@ -252,7 +261,7 @@ class BackgroundManager {
                   data: cachedData
                 });
               } else {
-                chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, (response) => {
+                chrome.tabs.sendMessage(tabId, { action: "analyzePage" }, () => {
                   if (chrome.runtime.lastError) {
                     this.sendToSidebar(tabId, {
                       type: "ANALYSIS_ERROR",
