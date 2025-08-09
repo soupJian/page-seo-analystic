@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Button, Spin, Space, Typography, Result } from "antd";
-import { ReloadOutlined, LoadingOutlined } from "@ant-design/icons";
+import { Button, Space, Typography } from "antd";
+import { ReloadOutlined } from "@ant-design/icons";
 
 const { Title } = Typography;
 
@@ -17,6 +17,9 @@ import LinkSection from "./components/Links/LinkSection";
 import StructuredDataCard from "./components/StructuredData/StructuredDataCard";
 import AnalyticsCard from "./components/Analytics/AnalyticsCard";
 import SpellCheckCard from "./components/SpellCheck/SpellCheckCard";
+import LoadingState from "./components/States/LoadingState";
+import ErrorState from "./components/States/ErrorState";
+import EmptyState from "./components/States/EmptyState";
 
 interface SidebarAppProps {
   onReanalyze: () => void;
@@ -81,88 +84,15 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
     import("../utils/export").then(m => m.exportToCsv(data, filename));
   };
 
-  // Loading state with full-height container
-  if (loading) {
-    return (
-      <div className="h-screen flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <Title level={4} className="m-0">
-            页面分析工具
-          </Title>
-        </div>
-        <div className="flex-1 flex flex-col justify-center items-center p-10">
-          <Spin
-            size="large"
-            indicator={<LoadingOutlined className="text-5xl" spin />}
-          />
-          <Title level={5} className="mt-4 mb-2">
-            正在分析页面
-          </Title>
-          <Typography.Text type="secondary">
-            正在收集SEO数据，请稍候...
-          </Typography.Text>
-        </div>
-      </div>
-    );
-  }
+  // Loading state
+  if (loading) return <LoadingState />;
 
   // Error state
-  if (error) {
-    return (
-      <div className="h-screen flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <Title level={4} className="m-0">
-            页面分析工具
-          </Title>
-        </div>
-        <div className="flex-1 flex flex-col justify-center items-center p-10">
-          <Result
-            status="error"
-            title="分析失败"
-            subTitle={error}
-            extra={
-              <Button
-                type="primary"
-                icon={<ReloadOutlined />}
-                onClick={handleReanalyze}
-              >
-                重新分析
-              </Button>
-            }
-          />
-        </div>
-      </div>
-    );
-  }
+  if (error)
+    return <ErrorState errorMessage={error} onRetry={handleReanalyze} />;
 
   // No data state
-  if (!seoData) {
-    return (
-      <div className="h-screen flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <Title level={4} className="m-0">
-            页面分析工具
-          </Title>
-        </div>
-        <div className="flex-1 flex flex-col justify-center items-center p-10">
-          <Result
-            status="info"
-            title="暂无数据"
-            subTitle="点击按钮开始分析当前页面的SEO信息"
-            extra={
-              <Button
-                type="primary"
-                icon={<ReloadOutlined />}
-                onClick={handleReanalyze}
-              >
-                开始分析
-              </Button>
-            }
-          />
-        </div>
-      </div>
-    );
-  }
+  if (!seoData) return <EmptyState onStart={handleReanalyze} />;
 
   // const foundAnalytics = seoData.analyticsInfo.filter(tool => tool.found);
 
