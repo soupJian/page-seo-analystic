@@ -11,12 +11,11 @@ import { SeoData } from "../types";
 // 导入组件（直接到具体文件）
 import BasicInfoCard from "./components/Basic/BasicInfoCard";
 import HeadingStructureCard from "./components/Heading/HeadingStructureCard";
-import RecommendationsCard from "./components/Recommendations/RecommendationsCard";
 import ImageSection from "./components/Images/ImageSection";
 import LinkSection from "./components/Links/LinkSection";
 import StructuredDataCard from "./components/StructuredData/StructuredDataCard";
 import AnalyticsCard from "./components/Analytics/AnalyticsCard";
-import SpellCheckCard from "./components/SpellCheck/SpellCheckCard";
+// 拼写检查组件已移除
 import LoadingState from "./components/States/LoadingState";
 import ErrorState from "./components/States/ErrorState";
 import EmptyState from "./components/States/EmptyState";
@@ -29,9 +28,7 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [recommendationImagePage, setRecommendationImagePage] = useState<
-    Record<number, number>
-  >({});
+  // 优化建议相关功能已移除
 
   // const pageSize = 10;
 
@@ -141,19 +138,9 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
           {/* 分析工具 */}
           <AnalyticsCard analyticsInfo={seoData.analyticsInfo} />
 
-          {/* 拼写检查 */}
-          <SpellCheckCard spellCheck={seoData.spellCheck} />
+          {/* 拼写检查功能已移除 */}
 
-          {/* 优化建议 */}
-          {seoData.recommendations.length > 0 && (
-            <RecommendationsCard
-              recommendations={seoData.recommendations}
-              recommendationImagePage={recommendationImagePage}
-              onRecommendationImagePageChange={(index, page) =>
-                setRecommendationImagePage(prev => ({ ...prev, [index]: page }))
-              }
-            />
-          )}
+          {/* 优化建议组件已移除 */}
         </Space>
       </div>
     </div>

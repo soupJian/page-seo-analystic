@@ -12,8 +12,6 @@ export interface SeoData {
   linksInfo: LinkInfo[];
   structuredData: StructuredDataInfo[];
   analyticsInfo: AnalyticsInfo[];
-  spellCheck: SpellCheckInfo[];
-  recommendations: RecommendationInfo[];
 }
 
 export interface BasicInfo {
@@ -92,7 +90,7 @@ export interface ProductInfo {
   url: string;
   rating: string;
   ratingCount: string;
-  offers: OfferInfo[];
+  offers?: OfferInfo[];
 }
 
 export interface OfferInfo {
@@ -111,28 +109,13 @@ export interface AnalyticsInfo {
   found: boolean;
 }
 
-export interface SpellCheckInfo {
-  word: string;
-  suggestions: string[];
-  context: string;
-}
+// 拼写检查类型已移除
 
-export interface RecommendationInfo {
-  category: string;
-  issue: string;
-  suggestion: string;
-  priority: string;
-}
+// RecommendationInfo 类型及字段已移除
 
 // ==================== SEO 建议相关类型 ====================
 
-export interface SeoRecommendation {
-  category: string;
-  issue: string;
-  suggestion: string;
-  priority: 'high' | 'medium' | 'low';
-  condition: (data: SeoAnalysisData) => boolean;
-}
+// SeoRecommendation 类型已不再使用，保留兼容性可按需恢复
 
 export interface SeoAnalysisData {
   basicInfo: {
@@ -209,11 +192,6 @@ export interface SeoAnalysisData {
     type: string;
     found: boolean;
   }>;
-  spellCheck: Array<{
-    word: string;
-    suggestions: string[];
-    context: string;
-  }>;
 }
 
 // ==================== 消息传递相关类型 ====================
@@ -259,13 +237,7 @@ export interface ExportData {
 
 // ==================== 统计相关类型 ====================
 
-export interface RecommendationStats {
-  total: number;
-  high: number;
-  medium: number;
-  low: number;
-  byCategory: Record<string, number>;
-}
+// RecommendationStats 类型已不再使用，保留兼容性可按需恢复
 
 // ==================== 工具类型 ====================
 

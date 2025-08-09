@@ -65,7 +65,7 @@ class BackgroundManager {
               if (chrome.runtime.lastError) {
                 this.sendToSidebar(activeTabId, {
                   type: "ANALYSIS_ERROR",
-                  error: "无法连接到页面内容脚本，请刷新页面重试"
+                  error: "无法连接到页面内容脚本，请刷新页面并重新打开插件"
                 });
               }
             });
@@ -117,7 +117,7 @@ class BackgroundManager {
             if (chrome.runtime.lastError) {
               this.sendToSidebar(tabId, {
                 type: "ANALYSIS_ERROR",
-                error: "无法连接到页面内容脚本，请刷新页面重试"
+                error: "无法连接到页面内容脚本，请刷新页面并重新打开插件"
               });
             }
           });
@@ -160,7 +160,7 @@ class BackgroundManager {
                     if (chrome.runtime.lastError) {
                       this.sendToSidebar(tabId, {
                         type: "ANALYSIS_ERROR",
-                        error: "无法连接到页面内容脚本，请刷新页面重试"
+                        error: "无法连接到页面内容脚本，请刷新页面并重新打开插件"
                       });
                     }
                   });
@@ -181,7 +181,7 @@ class BackgroundManager {
                 if (chrome.runtime.lastError) {
                   this.sendToSidebar(tabId, {
                     type: "ANALYSIS_ERROR",
-                    error: "无法连接到页面内容脚本，请刷新页面重试"
+                    error: "无法连接到页面内容脚本，请刷新页面并重新打开插件"
                   });
                 }
               });
@@ -210,7 +210,7 @@ class BackgroundManager {
               if (chrome.runtime.lastError) {
                 this.sendToSidebar(tabId, {
                   type: "ANALYSIS_ERROR",
-                  error: "无法连接到页面内容脚本，请刷新页面重试"
+                  error: "无法连接到页面内容脚本，请刷新页面并重新打开插件"
                 });
               }
             });
@@ -238,7 +238,7 @@ class BackgroundManager {
             if (chrome.runtime.lastError) {
               this.sendToSidebar(tabId, {
                 type: "ANALYSIS_ERROR",
-                error: "无法连接到页面内容脚本，请刷新页面重试"
+                error: "无法连接到页面内容脚本，请刷新页面并重新打开插件"
               });
             }
           });
@@ -265,7 +265,7 @@ class BackgroundManager {
                   if (chrome.runtime.lastError) {
                     this.sendToSidebar(tabId, {
                       type: "ANALYSIS_ERROR",
-                      error: "无法连接到页面内容脚本，请刷新页面重试"
+                      error: "无法连接到页面内容脚本，请刷新页面并重新打开插件"
                     });
                   }
                 });

@@ -5,8 +5,6 @@ import { SeoData, SeoAnalysisData } from '../types';
 import { getBasicInfo, getMetaInfo, getOpenGraphInfo, getHeadingStructure, getImageInfo, getLinksInfo } from '../utils/pageInfo';
 import { getStructuredData } from '../utils/structuredData';
 import { getAnalyticsInfo } from '../utils/analytics';
-import { getSpellCheck } from '../utils/spellCheck';
-import { buildRecommendations } from '../utils/recommendations';
 
 // 初始化内容分析器 - 使用IIFE避免全局变量冲突
 (function () {
@@ -155,7 +153,6 @@ import { buildRecommendations } from '../utils/recommendations';
         const linksInfo = getLinksInfo();
         const structuredData = getStructuredData();
         const analyticsInfo = getAnalyticsInfo();
-        const spellCheck = getSpellCheck();
 
         const analysisData: SeoAnalysisData = {
           basicInfo,
@@ -166,29 +163,16 @@ import { buildRecommendations } from '../utils/recommendations';
           linksInfo,
           structuredData,
           analyticsInfo,
-          spellCheck,
         };
 
-        const data: SeoData = {
-          basicInfo,
-          metaInfo,
-          openGraphInfo,
-          headingStructure,
-          imageInfo,
-          linksInfo,
-          structuredData,
-          analyticsInfo,
-          spellCheck,
-          recommendations: buildRecommendations(analysisData)
-        };
 
         // 发送数据到background script
         chrome.runtime.sendMessage({
           action: 'setSeoData',
-          data: data
+          data: analysisData
         });
 
-        return data;
+        return analysisData;
       } catch (error) {
         throw error;
       } finally {
@@ -231,9 +215,7 @@ import { buildRecommendations } from '../utils/recommendations';
         imageInfo: [],
         linksInfo: [],
         structuredData: [],
-        analyticsInfo: [],
-        spellCheck: [],
-        recommendations: []
+        analyticsInfo: []
       };
     }
 
