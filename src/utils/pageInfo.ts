@@ -143,10 +143,41 @@ export function getLinksInfo(): LinkInfo[] {
     }
 
     let type = "external";
-    if (href.startsWith(window.location.origin)) {
-      type = "internal";
-    } else if (href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:") ||
-      href.startsWith("ftp:") || href.startsWith("file:")) {
+
+    try {
+      const currentUrl = new URL(window.location.href);
+      const linkUrl = new URL(href, window.location.href);
+
+      // 1. 首先判断特殊链接：锚点、邮件、电话、协议链接等
+      if (href.startsWith("#") ||
+        href.startsWith("mailto:") ||
+        href.startsWith("tel:") ||
+        href.startsWith("sms:") ||
+        href.startsWith("ftp:") ||
+        href.startsWith("file:") ||
+        href.startsWith("data:") ||
+        href.startsWith("blob:") ||
+        href.startsWith("about:") ||
+        href.startsWith("chrome:") ||
+        href.startsWith("moz-extension:") ||
+        href.startsWith("chrome-extension:") ||
+        href.startsWith("edge-extension:") ||
+        href.startsWith("safari-extension:") ||
+        href.startsWith("opera-extension:") ||
+        href.startsWith("vivaldi-extension:")) {
+        type = "special";
+      }
+      // 2. 然后判断内链：只需要判断是否同域名（不要求协议相同）
+      else if (linkUrl.hostname === currentUrl.hostname) {
+        type = "internal";
+      }
+      // 3. 最后剩下的就是外链：不同域名的链接
+      else {
+        type = "external";
+      }
+    } catch (error) {
+      // 如果URL解析失败，默认为特殊链接
+      console.warn("链接URL解析失败:", href, error);
       type = "special";
     }
 

@@ -19,6 +19,7 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo }) => {
       title: "链接",
       dataIndex: "href",
       key: "href",
+      width: 200,
       render: (href: string) => (
         <Tooltip title={href}>
           <a
@@ -36,15 +37,7 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo }) => {
       title: "文本",
       dataIndex: "text",
       key: "text",
-      filteredValue: columnFilters.text ?? null,
-      filters: [
-        { text: "文本为空", value: "empty" },
-        { text: "文本有值", value: "nonempty" },
-      ],
-      onFilter: (value: any, record: any) => {
-        const empty = !record.text || record.text.trim() === "";
-        return value === "empty" ? empty : !empty;
-      },
+      width: 150,
       render: (text: string) => (
         <div className="max-h-10 overflow-hidden leading-5 line-clamp-2 break-words">
           <span className={text ? "text-gray-900" : "text-gray-500"}>
@@ -57,6 +50,7 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo }) => {
       title: "类型",
       dataIndex: "type",
       key: "type",
+      width: 100,
       filteredValue: columnFilters.type ?? null,
       filters: [
         { text: "内链", value: "internal" },
@@ -66,15 +60,28 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo }) => {
       onFilter: (value: any, record: any) => record.type === value,
       render: (type: string) => {
         const typeConfig = {
-          internal: { color: "green", text: "内链" },
-          external: { color: "blue", text: "外链" },
-          special: { color: "orange", text: "特殊链接" },
+          internal: { color: "green", text: "内链", description: "同域名链接" },
+          external: {
+            color: "blue",
+            text: "外链",
+            description: "其他域名链接",
+          },
+          special: {
+            color: "orange",
+            text: "特殊链接",
+            description: "协议/锚点链接",
+          },
         } as const;
         const config = (typeConfig as any)[type] || {
           color: "default",
           text: type,
+          description: "",
         };
-        return <Tag color={config.color}>{config.text}</Tag>;
+        return (
+          <Tooltip title={config.description}>
+            <Tag color={config.color}>{config.text}</Tag>
+          </Tooltip>
+        );
       },
     },
   ];
@@ -83,8 +90,11 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo }) => {
     <div>
       <Table
         columns={linkColumns}
-        dataSource={linksInfo.map(l => ({ ...l, key: l.href }))}
-        rowKey={(record: any) => record.href}
+        dataSource={linksInfo.map((l, index) => ({
+          ...l,
+          key: `${l.href}-${index}`,
+        }))}
+        rowKey={(record: any) => record.key}
         pagination={{
           current: currentLinkPage,
           pageSize,
