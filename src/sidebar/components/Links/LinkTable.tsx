@@ -59,26 +59,16 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo }) => {
       key: "type",
       filteredValue: columnFilters.type ?? null,
       filters: [
-        { text: "内部链接", value: "internal" },
-        { text: "外部链接", value: "external" },
-        { text: "邮箱链接", value: "email" },
-        { text: "电话链接", value: "phone" },
-        { text: "锚点链接", value: "anchor" },
-        { text: "JavaScript", value: "javascript" },
-        { text: "FTP链接", value: "ftp" },
-        { text: "文件链接", value: "file" },
+        { text: "内链", value: "internal" },
+        { text: "外链", value: "external" },
+        { text: "特殊链接", value: "special" },
       ],
       onFilter: (value: any, record: any) => record.type === value,
       render: (type: string) => {
         const typeConfig = {
-          internal: { color: "green", text: "内部链接" },
-          external: { color: "blue", text: "外部链接" },
-          email: { color: "purple", text: "邮箱链接" },
-          phone: { color: "orange", text: "电话链接" },
-          anchor: { color: "cyan", text: "锚点链接" },
-          javascript: { color: "red", text: "JavaScript" },
-          ftp: { color: "magenta", text: "FTP链接" },
-          file: { color: "geekblue", text: "文件链接" },
+          internal: { color: "green", text: "内链" },
+          external: { color: "blue", text: "外链" },
+          special: { color: "orange", text: "特殊链接" },
         } as const;
         const config = (typeConfig as any)[type] || {
           color: "default",

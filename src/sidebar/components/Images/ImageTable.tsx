@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Table, Tag, Tooltip, Typography, Space, Button } from "antd";
+import { Table, Tag, Tooltip, Typography, Space, Button, Image } from "antd";
 import { ImageInfo } from "../../../types";
 
 interface ImageTableProps {
@@ -31,7 +31,7 @@ const ImageTable: React.FC<ImageTableProps> = ({ imageInfo }) => {
 
     const preloadOne = (key: string, src: string) =>
       new Promise<void>(resolve => {
-        const img = new Image();
+        const img = new window.Image();
         img.onload = () => {
           try {
             // 方法1: 尝试从 Performance API 获取
@@ -115,12 +115,17 @@ const ImageTable: React.FC<ImageTableProps> = ({ imageInfo }) => {
       key: "image",
       width: 80,
       render: (src: string, record: any) => (
-        <img
+        <Image
           src={src}
           alt={record.alt || "图片"}
           width={60}
           height={60}
           className="object-cover rounded"
+          preview={{
+            mask: "点击预览",
+            maskClassName: "rounded",
+          }}
+          fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg0MFY0MEgyMFYyMFoiIGZpbGw9IiNEN0Q3RDciLz4KPHBhdGggZD0iTTI1IDI1SDM1VjM1SDI1VjI1WiIgZmlsbD0iI0E5QTlBOSIvPgo8L3N2Zz4K"
         />
       ),
     },

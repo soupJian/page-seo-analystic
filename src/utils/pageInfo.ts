@@ -129,13 +129,12 @@ export function getLinksInfo(): LinkInfo[] {
     const rel = linkEl.getAttribute("rel") || "";
 
     let type = "external";
-    if (href.startsWith(window.location.origin)) type = "internal";
-    else if (href.startsWith("#")) type = "anchor";
-    else if (href.startsWith("mailto:")) type = "email";
-    else if (href.startsWith("tel:")) type = "phone";
-    else if (href.startsWith("javascript:")) type = "javascript";
-    else if (href.startsWith("ftp:")) type = "ftp";
-    else if (href.startsWith("file:")) type = "file";
+    if (href.startsWith(window.location.origin)) {
+      type = "internal";
+    } else if (href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:") ||
+      href.startsWith("javascript:") || href.startsWith("ftp:") || href.startsWith("file:")) {
+      type = "special";
+    }
 
     if (href && text) links.push({ href, text, type, title, rel });
   });
