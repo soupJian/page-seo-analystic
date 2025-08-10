@@ -22,19 +22,19 @@ const HeadingColumns: React.FC<HeadingColumnsProps> = ({ headings }) => {
   // 获取层级标签配置
   const getLevelConfig = (level: number) => {
     const configs = {
-      1: { color: "red", text: "H1", icon: "🔴", borderColor: "#ff4d4f" },
-      2: { color: "orange", text: "H2", icon: "🟠", borderColor: "#ff7a45" },
-      3: { color: "blue", text: "H3", icon: "🔵", borderColor: "#1890ff" },
-      4: { color: "green", text: "H4", icon: "🟢", borderColor: "#52c41a" },
-      5: { color: "purple", text: "H5", icon: "🟣", borderColor: "#722ed1" },
-      6: { color: "geekblue", text: "H6", icon: "🔷", borderColor: "#597ef7" },
+      1: { color: "red", icon: "🔴", borderColor: "#ff4d4f", tag: "h1" },
+      2: { color: "orange", icon: "🟠", borderColor: "#ff7a45", tag: "h2" },
+      3: { color: "blue", icon: "🔵", borderColor: "#1890ff", tag: "h3" },
+      4: { color: "green", icon: "🟢", borderColor: "#52c41a", tag: "h4" },
+      5: { color: "purple", icon: "🟣", borderColor: "#722ed1", tag: "h5" },
+      6: { color: "geekblue", icon: "🔷", borderColor: "#597ef7", tag: "h6" },
     };
     return (
       configs[level as keyof typeof configs] || {
         color: "default",
-        text: `H${level}`,
         icon: "⚪",
         borderColor: "#d9d9d9",
+        tag: `h${level}`,
       }
     );
   };
@@ -57,7 +57,7 @@ const HeadingColumns: React.FC<HeadingColumnsProps> = ({ headings }) => {
             title={
               <Space>
                 <span>{config.icon}</span>
-                <Text strong>{config.text}</Text>
+                <Text strong>{config.tag}</Text>
                 <Tag color={config.color as any}>{levelHeadings.length} 个</Tag>
               </Space>
             }
@@ -70,15 +70,10 @@ const HeadingColumns: React.FC<HeadingColumnsProps> = ({ headings }) => {
                   key={`${level}-${index}`}
                   className="flex items-start gap-2 p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
                 >
-                  <Tag color={config.color as any}>{index + 1}</Tag>
                   <div className="flex-1 min-w-0">
                     <Text className="text-sm font-medium text-gray-900">
                       {heading.text}
                     </Text>
-                    <div className="mt-1 text-xs text-gray-500">
-                      <Tag color="default">{heading.tag}</Tag>
-                      <span className="ml-2">层级: {heading.level}</span>
-                    </div>
                   </div>
                 </div>
               ))}

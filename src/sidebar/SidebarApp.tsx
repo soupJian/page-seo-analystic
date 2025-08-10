@@ -15,6 +15,8 @@ import ImageSection from "./components/Images/ImageSection";
 import LinkSection from "./components/Links/LinkSection";
 import StructuredDataCard from "./components/StructuredData/StructuredDataCard";
 import AnalyticsCard from "./components/Analytics/AnalyticsCard";
+import SupportCard from "./components/Support/SupportCard";
+import ComingSoonCard from "./components/Support/ComingSoonCard";
 // 拼写检查组件已移除
 import LoadingState from "./components/States/LoadingState";
 import ErrorState from "./components/States/ErrorState";
@@ -141,9 +143,11 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
           {/* 分析工具 */}
           <AnalyticsCard analyticsInfo={pageData.analyticsInfo} />
 
-          {/* 拼写检查功能已移除 */}
+          {/* 支持 */}
+          <SupportCard />
 
-          {/* 优化建议组件已移除 */}
+          {/* 敬请期待 */}
+          <ComingSoonCard />
         </Space>
       </div>
     </div>
