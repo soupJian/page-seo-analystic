@@ -5,7 +5,7 @@ import { ReloadOutlined } from "@ant-design/icons";
 const { Title } = Typography;
 
 // 导入统一类型定义
-import { SeoData } from "../types";
+import { PageData } from "../types";
 // import HeadingMindMap from "./HeadingMindMap";
 
 // 导入组件（直接到具体文件）
@@ -24,7 +24,7 @@ interface SidebarAppProps {
   onReanalyze: () => void;
 }
 const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
-  const [seoData, setSeoData] = useState<SeoData | null>(null);
+  const [pageData, setPageData] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +36,7 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
   const handleReanalyze = () => {
     setLoading(true);
     setError(null);
-    setSeoData(null);
+    setPageData(null);
 
     // 延迟一秒后触发重新分析，给用户看到loading效果
     setTimeout(() => {
@@ -55,8 +55,8 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
     const handleMessage = (message: any) => {
       console.log("Sidebar received message:", message);
 
-      if (message.type === "SEO_DATA") {
-        setSeoData(message.data);
+      if (message.type === "PAGE_DATA") {
+        setPageData(message.data);
         setLoading(false);
         setError(null);
       } else if (message.type === "ANALYSIS_ERROR") {
@@ -65,7 +65,7 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
       } else if (message.type === "URL_CHANGED") {
         setLoading(true);
         setError(null);
-        setSeoData(null);
+        setPageData(null);
       }
     };
 
@@ -89,9 +89,9 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
     return <ErrorState errorMessage={error} onRetry={handleReanalyze} />;
 
   // No data state
-  if (!seoData) return <EmptyState onStart={handleReanalyze} />;
+  if (!pageData) return <EmptyState onStart={handleReanalyze} />;
 
-  // const foundAnalytics = seoData.analyticsInfo.filter(tool => tool.found);
+  // const foundAnalytics = pageData.analyticsInfo.filter(tool => tool.found);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -116,27 +116,30 @@ const SidebarApp: React.FC<SidebarAppProps> = ({ onReanalyze }) => {
         <Space direction="vertical" size="middle" className="w-full">
           {/* 基本信息 */}
           <BasicInfoCard
-            basicInfo={seoData.basicInfo}
-            metaInfo={seoData.metaInfo}
+            basicInfo={pageData.basicInfo}
+            metaInfo={pageData.metaInfo}
           />
 
           {/* 标题结构 */}
-          <HeadingStructureCard headings={seoData.headingStructure} />
+          <HeadingStructureCard headings={pageData.headingStructure} />
 
           {/* 图片信息 */}
           <ImageSection
-            imageInfo={seoData.imageInfo}
+            imageInfo={pageData.imageInfo}
             onExport={exportToExcel}
           />
 
           {/* 链接信息 */}
-          <LinkSection linksInfo={seoData.linksInfo} onExport={exportToExcel} />
+          <LinkSection
+            linksInfo={pageData.linksInfo}
+            onExport={exportToExcel}
+          />
 
           {/* 结构化数据 */}
-          <StructuredDataCard structuredData={seoData.structuredData} />
+          <StructuredDataCard structuredData={pageData.structuredData} />
 
           {/* 分析工具 */}
-          <AnalyticsCard analyticsInfo={seoData.analyticsInfo} />
+          <AnalyticsCard analyticsInfo={pageData.analyticsInfo} />
 
           {/* 拼写检查功能已移除 */}
 

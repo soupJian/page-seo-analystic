@@ -1,9 +1,9 @@
 // 统一的类型导出文件
 // 包含所有项目中使用的接口定义，除了Props类型
 
-// ==================== SEO 相关类型 ====================
+// ==================== 页面分析相关类型 ====================
 
-export interface SeoData {
+export interface PageData {
   basicInfo: BasicInfo;
   metaInfo: MetaInfo;
   openGraphInfo: OpenGraphInfo;
@@ -113,11 +113,11 @@ export interface AnalyticsInfo {
 
 // RecommendationInfo 类型及字段已移除
 
-// ==================== SEO 建议相关类型 ====================
+// ==================== 页面分析建议相关类型 ====================
 
-// SeoRecommendation 类型已不再使用，保留兼容性可按需恢复
+// PageRecommendation 类型已不再使用，保留兼容性可按需恢复
 
-export interface SeoAnalysisData {
+export interface PageAnalysisData {
   basicInfo: {
     title: string;
     url: string;
@@ -198,7 +198,7 @@ export interface SeoAnalysisData {
 
 export interface BackgroundMessage {
   action: string;
-  data?: SeoData;
+  data?: PageData;
   tabId?: number;
   url?: string;
   error?: string;
@@ -207,14 +207,14 @@ export interface BackgroundMessage {
 
 export interface SidebarMessage {
   type: string;
-  data?: SeoData;
+  data?: PageData;
   error?: string;
   message?: string;
 }
 
 export interface MessageData {
   action: string;
-  data?: SeoData;
+  data?: PageData;
   url?: string;
   error?: string;
 }

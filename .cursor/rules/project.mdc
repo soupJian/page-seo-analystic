@@ -11,12 +11,12 @@ alwaysApply: true
 - 你是一名图像识别和元素分析师
 - 你是一名算法高手
 - 你是一名高级网站运营，了解 shopify 和 woocommerce 以及
-- 你精通谷歌 seo，你知道结构化数据 jsonLd
+- 你精通谷歌网页分析，你知道结构化数据 jsonLd
 
 ## 帮助文档
 
 - https://developers.google.com/search/docs/appearance/structured-data/search-gallery?hl=zh-cn 帮助你分析结构化数据
-- https://developers.google.com/search/docs/fundamentals/seo-starter-guide?hl=zh-cn 帮助你了解 seo
+- https://developers.google.com/search/docs/fundamentals/seo-starter-guide?hl=zh-cn 帮助你了解网页分析
 - https://developers.google.com/search/docs/crawling-indexing?hl=zh-cn 帮助你了解谷歌网站抓取
 
 ## 需求
@@ -28,12 +28,12 @@ alwaysApply: true
 - 点击插件后，唤起谷歌的侧边栏，侧边栏中展示我的内容
 - 侧边栏功能如下
   - 提取所有的 js，用到了那些分析工具，用到了那些 js 技术等
-  - 当前页面中的 seo 相关信息，meta，title，url，canonical，h1,h2 等标题，
+  - 当前页面中的网页相关信息，meta，title，url，canonical，h1,h2 等标题，
   - 谷歌分析等信息
   - meta 信息，open graph 信息
   - 页面的 title，logo，h1,h2,h3，h4 信息
   - 展示所有图片和图片地址和图片 alt 信息，用表格展示，展示图片最大 width 为 100px
-- 对当前页面的 seo 信息进行分析，结合 seo 文档，给出推荐建议
+- 对当前页面的网页信息进行分析，结合网页分析文档，给出推荐建议
 
 - innerHtml 我希望可以抽离出来，减少 content.js 的提价
 - 美化一下页面，更加的模块化，响应式
@@ -73,7 +73,7 @@ alwaysApply: true
 
 - 图片列表中的图片，图片这一列 width 是 100px，如果图片 width 比 100 小，则展示小的，否则展示图片的 width 为 100px
 - | 脚本: 1 | ID: schema-1-1 和 发现 2 个 JSON-LD 结构化数据 这个就不用展示了
-- seo 的优化建议，我觉得可以参考谷歌 seo 的文档提出更合理的建议
+- 网页的优化建议，我觉得可以参考谷歌网页分析的文档提出更合理的建议
 - 分析工具不需要固定写死，你应该从页面的 script 中找对应的链接进行匹配，有可能也有别的工具呢！
 - 连接信息中的 类型 不需要换行
 - 展开的侧边栏应该只在当前页面显示，如果用户切换了 tab 标签，那个标签没有唤起的话，就不要显示侧边栏

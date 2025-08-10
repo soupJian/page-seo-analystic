@@ -2,13 +2,13 @@
 
 // 导入统一类型定义
 import {
-  SeoData,
+  PageData,
   BackgroundMessage,
   SidebarMessage
 } from '../types';
 
 class BackgroundManager {
-  private seoDataCache: Map<number, SeoData> = new Map();
+  private pageDataCache: Map<number, PageData> = new Map();
   private sidebarPorts: Map<number, chrome.runtime.Port> = new Map();
 
   constructor() {
@@ -52,7 +52,7 @@ class BackgroundManager {
             console.log("Active tab ID:", activeTabId);
 
             // 清除旧数据
-            this.seoDataCache.delete(activeTabId);
+            this.pageDataCache.delete(activeTabId);
 
             // 通知sidebar开始重新分析
             this.sendToSidebar(activeTabId, {
@@ -81,29 +81,29 @@ class BackgroundManager {
       // 对于其他消息，需要检查tabId
       if (!tabId) return false;
 
-      if (request.action === "setSeoData") {
-        // 存储SEO数据
-        this.seoDataCache.set(tabId, request.data!);
+      if (request.action === "setPageData") {
+        // 存储页面数据
+        this.pageDataCache.set(tabId, request.data!);
 
         // 转发到对应的sidebar
         this.sendToSidebar(tabId, {
-          type: "SEO_DATA",
+          type: "PAGE_DATA",
           data: request.data
         });
 
         sendResponse({ success: true });
         return true;
 
-      } else if (request.action === "getSeoData") {
-        // 获取SEO数据
-        const data = this.seoDataCache.get(tabId);
+      } else if (request.action === "getPageData") {
+        // 获取页面数据
+        const data = this.pageDataCache.get(tabId);
         sendResponse({ data: data || null });
         return true;
 
       } else if (request.action === "analyzeUrl") {
         // 分析URL变化
         // 清除旧数据
-        this.seoDataCache.delete(tabId);
+        this.pageDataCache.delete(tabId);
 
         // 通知sidebar URL变化
         this.sendToSidebar(tabId, {
@@ -148,10 +148,10 @@ class BackgroundManager {
             port.onMessage.addListener((message: SidebarMessage) => {
               if (message.type === 'SIDEBAR_CONNECTED') {
                 // 如果有缓存数据，立即发送
-                const cachedData = this.seoDataCache.get(tabId);
+                const cachedData = this.pageDataCache.get(tabId);
                 if (cachedData) {
                   this.sendToSidebar(tabId, {
-                    type: "SEO_DATA",
+                    type: "PAGE_DATA",
                     data: cachedData
                   });
                 } else {
@@ -169,10 +169,10 @@ class BackgroundManager {
             });
 
             // 如果有缓存数据，立即发送
-            const cachedData = this.seoDataCache.get(tabId);
+            const cachedData = this.pageDataCache.get(tabId);
             if (cachedData) {
               this.sendToSidebar(tabId, {
-                type: "SEO_DATA",
+                type: "PAGE_DATA",
                 data: cachedData
               });
             } else {
@@ -195,7 +195,7 @@ class BackgroundManager {
     chrome.tabs.onUpdated.addListener((tabId: number, changeInfo: chrome.tabs.TabChangeInfo) => {
       if (changeInfo.status === 'complete') {
         // 页面加载完成，清除旧数据
-        this.seoDataCache.delete(tabId);
+        this.pageDataCache.delete(tabId);
 
         // 如果这个标签页有sidebar连接，通知URL变化
         if (this.sidebarPorts.has(tabId)) {
@@ -226,10 +226,10 @@ class BackgroundManager {
       // 检查是否有sidebar连接到这个标签页
       if (this.sidebarPorts.has(tabId)) {
         // 检查是否有缓存数据
-        const cachedData = this.seoDataCache.get(tabId);
+        const cachedData = this.pageDataCache.get(tabId);
         if (cachedData) {
           this.sendToSidebar(tabId, {
-            type: "SEO_DATA",
+            type: "PAGE_DATA",
             data: cachedData
           });
         } else {
@@ -254,10 +254,10 @@ class BackgroundManager {
               this.sidebarPorts.set(tabId, existingPort);
 
               // 检查是否有缓存数据
-              const cachedData = this.seoDataCache.get(tabId);
+              const cachedData = this.pageDataCache.get(tabId);
               if (cachedData) {
                 this.sendToSidebar(tabId, {
-                  type: "SEO_DATA",
+                  type: "PAGE_DATA",
                   data: cachedData
                 });
               } else {
@@ -278,7 +278,7 @@ class BackgroundManager {
 
     // 监听标签页关闭事件
     chrome.tabs.onRemoved.addListener((tabId: number) => {
-      this.seoDataCache.delete(tabId);
+      this.pageDataCache.delete(tabId);
       this.sidebarPorts.delete(tabId);
     });
   }

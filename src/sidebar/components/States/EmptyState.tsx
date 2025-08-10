@@ -12,7 +12,7 @@ interface EmptyStateProps {
 
 const EmptyState: React.FC<EmptyStateProps> = ({
   title = "页面分析工具",
-  subTitle = "点击按钮开始分析当前页面的SEO信息",
+  subTitle = "点击按钮开始分析当前页面的网页信息",
   onStart,
 }) => {
   return (

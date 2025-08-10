@@ -1,7 +1,7 @@
 {
   "name": "page-analystic",
   "version": "1.0.0",
-  "description": "Chrome扩展SEO分析工具",
+  "description": "Chrome扩展网页分析工具",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,7 @@
   },
   "keywords": [
     "chrome-extension",
-    "seo",
+    "page-analysis",
     "analytics",
     "structured-data",
     "json-ld"

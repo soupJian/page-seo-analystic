@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Page Analytics - SEO分析工具",
+  "name": "Page Analytics - 网页分析工具",
   "version": "1.0.0",
-  "description": "分析网页SEO信息，提供优化建议，支持结构化数据分析和Excel导出",
+  "description": "分析网页信息，提供优化建议，支持结构化数据分析和Excel导出",
   "permissions": [
     "activeTab",
     "scripting",
@@ -10,7 +10,7 @@
     "tabs"
   ],
   "action": {
-    "default_title": "Page Analytics - 点击打开SEO分析",
+    "default_title": "Page Analytics - 点击打开网页分析",
     "default_icon": "icon.svg"
   },
   "side_panel": {

@@ -1,7 +1,7 @@
-// 内容脚本 - 页面分析和SEO数据收集
+// 内容脚本 - 页面分析和网页数据收集
 
 // 导入统一类型定义
-import { SeoData, SeoAnalysisData } from '../types';
+import { PageData, PageAnalysisData } from '../types';
 import { getBasicInfo, getMetaInfo, getOpenGraphInfo, getHeadingStructure, getImageInfo, getLinksInfo } from '../utils/pageInfo';
 import { getStructuredData } from '../utils/structuredData';
 import { getAnalyticsInfo } from '../utils/analytics';
@@ -11,10 +11,10 @@ import { getAnalyticsInfo } from '../utils/analytics';
   'use strict';
 
   // 检查是否已经初始化过，避免重复初始化
-  if ((window as any).__seoAnalyzerInitialized) {
+  if ((window as any).__pageAnalyzerInitialized) {
     return;
   }
-  (window as any).__seoAnalyzerInitialized = true;
+  (window as any).__pageAnalyzerInitialized = true;
 
   // 在局部作用域中创建类定义，避免全局变量冲突
   class PageAnalyzer {
@@ -137,7 +137,7 @@ import { getAnalyticsInfo } from '../utils/analytics';
       }
     }
 
-    private async analyzePage(): Promise<SeoData> {
+    private async analyzePage(): Promise<PageData> {
       if (this.isAnalyzing) {
         return this.getEmptyData();
       }
@@ -154,7 +154,7 @@ import { getAnalyticsInfo } from '../utils/analytics';
         const structuredData = getStructuredData();
         const analyticsInfo = getAnalyticsInfo();
 
-        const analysisData: SeoAnalysisData = {
+        const analysisData: PageAnalysisData = {
           basicInfo,
           metaInfo,
           openGraphInfo,
@@ -168,7 +168,7 @@ import { getAnalyticsInfo } from '../utils/analytics';
 
         // 发送数据到background script
         chrome.runtime.sendMessage({
-          action: 'setSeoData',
+          action: 'setPageData',
           data: analysisData
         });
 
@@ -180,7 +180,7 @@ import { getAnalyticsInfo } from '../utils/analytics';
       }
     }
 
-    private getEmptyData(): SeoData {
+    private getEmptyData(): PageData {
       return {
         basicInfo: {
           title: '',
@@ -226,6 +226,6 @@ import { getAnalyticsInfo } from '../utils/analytics';
   const analyzer = new PageAnalyzer();
 
   // 可选：将实例存储到一个命名空间中，避免冲突
-  (window as any).__seoAnalyzer = analyzer;
+  (window as any).__pageAnalyzer = analyzer;
 
 })(); 
