@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, Space, Tag, Button, Empty } from "antd";
 import { LinkOutlined, ExportOutlined } from "@ant-design/icons";
 import { LinkInfo } from "../../../types";
@@ -21,7 +21,6 @@ const LinkSection: React.FC<LinkSectionProps> = ({ linksInfo, onExport }) => {
       size="small"
       extra={
         <Space>
-          <Tag color="blue">{linksInfo.length} 个链接</Tag>
           <Button
             type="link"
             size="small"

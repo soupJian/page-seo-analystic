@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Space, Tag, Button, Empty } from "antd";
+import { Card, Space, Button, Empty } from "antd";
 import { PictureOutlined, ExportOutlined } from "@ant-design/icons";
 import { ImageInfo } from "../../../types";
 import ImageTable from "./ImageTable.tsx";
@@ -21,7 +21,6 @@ const ImageSection: React.FC<ImageSectionProps> = ({ imageInfo, onExport }) => {
       size="small"
       extra={
         <Space>
-          <Tag color="blue">{imageInfo.length} 张图片</Tag>
           <Button
             type="link"
             size="small"

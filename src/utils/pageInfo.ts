@@ -62,17 +62,47 @@ export function getHeadingStructure(): HeadingInfo[] {
 export function getImageInfo(): ImageInfo[] {
   const images: ImageInfo[] = [];
   const imageElements = document.querySelectorAll("img");
+  const seenSrcSet: Set<string> = new Set();
 
   imageElements.forEach(img => {
-    const src = (img as HTMLImageElement).src || "";
+    const el = img as HTMLImageElement;
+    const src = el.currentSrc || el.src || "";
     const alt = (img as HTMLImageElement).alt || "";
-    const width = (img as HTMLImageElement).naturalWidth || 0;
-    const height = (img as HTMLImageElement).naturalHeight || 0;
-    const loading = (img as HTMLImageElement).loading || "";
+    const width = el.naturalWidth || 0;
+    const height = el.naturalHeight || 0;
+    const loading = el.loading || "";
 
     if (src) {
-      const isSvg = src.toLowerCase().includes(".svg") || src.includes("data:image/svg+xml");
-      const isWebp = src.toLowerCase().includes(".webp");
+      if (seenSrcSet.has(src)) {
+        return; // 去重，确保同一 src 仅保留一条
+      }
+      seenSrcSet.add(src);
+      const lower = src.toLowerCase();
+      const isData = lower.startsWith("data:");
+      if (isData && !lower.startsWith("data:image/")) {
+        return; // 过滤非图片的 data URI
+      }
+
+      const isSvg = lower.includes(".svg") || lower.startsWith("data:image/svg");
+      const isWebp = lower.includes(".webp") || lower.startsWith("data:image/webp");
+      const isPng = lower.includes(".png") || lower.startsWith("data:image/png");
+      const isJpg = lower.includes(".jpg") || lower.includes(".jpeg") || lower.startsWith("data:image/jpeg");
+      const isGif = lower.includes(".gif") || lower.startsWith("data:image/gif");
+      const isAvif = lower.includes(".avif") || lower.startsWith("data:image/avif");
+
+      // 过滤掉非图片格式（仅保留常见图片格式）
+      if (!(isSvg || isWebp || isPng || isJpg || isGif || isAvif || (isData && lower.startsWith("data:image/")))) {
+        return;
+      }
+
+      let format: string = "other";
+      if (isSvg) format = "svg";
+      else if (isWebp) format = "webp";
+      else if (isPng) format = "png";
+      else if (isJpg) format = "jpg";
+      else if (isGif) format = "gif";
+      else if (isAvif) format = "avif";
+
 
       images.push({
         src,
@@ -80,7 +110,7 @@ export function getImageInfo(): ImageInfo[] {
         width,
         height,
         loading,
-        format: isSvg ? "svg" : isWebp ? "webp" : "other",
+        format,
       });
     }
   });

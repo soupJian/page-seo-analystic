@@ -11,7 +11,7 @@ interface LoadingStateProps {
 
 const LoadingState: React.FC<LoadingStateProps> = ({
   title = "页面分析工具",
-  subtitle = "正在收集SEO数据，请稍候...",
+  subtitle = "正在收集页面数据，请稍候...",
 }) => {
   return (
     <div className="h-screen flex flex-col">

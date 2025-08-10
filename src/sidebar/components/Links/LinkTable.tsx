@@ -1,13 +1,5 @@
-import React, { useState } from "react";
-import {
-  Table,
-  Tag,
-  Tooltip,
-  Pagination,
-  Space,
-  Typography,
-  Select,
-} from "antd";
+import React, { useEffect, useState } from "react";
+import { Table, Tag, Tooltip } from "antd";
 import { LinkInfo } from "../../../types";
 
 interface LinkTableProps {
@@ -15,9 +7,11 @@ interface LinkTableProps {
   onExport: (data: any[], filename: string) => void;
 }
 
-const LinkTable: React.FC<LinkTableProps> = ({ linksInfo, onExport }) => {
-  const [linkFilter, setLinkFilter] = useState("all");
+const LinkTable: React.FC<LinkTableProps> = ({ linksInfo }) => {
   const [currentLinkPage, setLinkPage] = useState(1);
+  const [columnFilters, setColumnFilters] = useState<
+    Record<string, React.Key[] | null>
+  >({});
   const pageSize = 10;
 
   const linkColumns = [
@@ -31,7 +25,7 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo, onExport }) => {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="block max-w-xs overflow-hidden text-ellipsis whitespace-nowrap"
+            className="block max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap"
           >
             {href}
           </a>
@@ -42,6 +36,15 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo, onExport }) => {
       title: "文本",
       dataIndex: "text",
       key: "text",
+      filteredValue: columnFilters.text ?? null,
+      filters: [
+        { text: "文本为空", value: "empty" },
+        { text: "文本有值", value: "nonempty" },
+      ],
+      onFilter: (value: any, record: any) => {
+        const empty = !record.text || record.text.trim() === "";
+        return value === "empty" ? empty : !empty;
+      },
       render: (text: string) => (
         <div className="max-h-10 overflow-hidden leading-5 line-clamp-2 break-words">
           <span className={text ? "text-gray-900" : "text-gray-500"}>
@@ -54,6 +57,18 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo, onExport }) => {
       title: "类型",
       dataIndex: "type",
       key: "type",
+      filteredValue: columnFilters.type ?? null,
+      filters: [
+        { text: "内部链接", value: "internal" },
+        { text: "外部链接", value: "external" },
+        { text: "邮箱链接", value: "email" },
+        { text: "电话链接", value: "phone" },
+        { text: "锚点链接", value: "anchor" },
+        { text: "JavaScript", value: "javascript" },
+        { text: "FTP链接", value: "ftp" },
+        { text: "文件链接", value: "file" },
+      ],
+      onFilter: (value: any, record: any) => record.type === value,
       render: (type: string) => {
         const typeConfig = {
           internal: { color: "green", text: "内部链接" },
@@ -74,65 +89,27 @@ const LinkTable: React.FC<LinkTableProps> = ({ linksInfo, onExport }) => {
     },
   ];
 
-  const filteredLinks = linksInfo.filter(link => {
-    if (linkFilter === "all") return true;
-    if (linkFilter === "internal") return link.type === "internal";
-    if (linkFilter === "external") return link.type === "external";
-    if (linkFilter === "special") {
-      return ["email", "phone", "anchor", "javascript", "ftp", "file"].includes(
-        link.type
-      );
-    }
-    return true;
-  });
-
-  const paginatedLinks = filteredLinks.slice(
-    (currentLinkPage - 1) * pageSize,
-    currentLinkPage * pageSize
-  );
-
   return (
     <div>
-      <div className="mb-2">
-        <Space>
-          <Typography.Text strong>过滤:</Typography.Text>
-          <Select
-            value={linkFilter}
-            onChange={setLinkFilter}
-            className="w-36"
-            size="small"
-          >
-            <Select.Option value="all">全部链接</Select.Option>
-            <Select.Option value="internal">内部链接</Select.Option>
-            <Select.Option value="external">外部链接</Select.Option>
-            <Select.Option value="special">特殊链接</Select.Option>
-          </Select>
-          <Typography.Text type="secondary">
-            (显示 {filteredLinks.length} / {linksInfo.length})
-          </Typography.Text>
-        </Space>
-      </div>
       <Table
         columns={linkColumns}
-        dataSource={paginatedLinks}
-        pagination={false}
-        size="small"
-        scroll={{ x: 400 }}
-      />
-      <Pagination
-        current={currentLinkPage}
-        total={filteredLinks.length}
-        pageSize={pageSize}
-        onChange={page => {
-          setLinkPage(page);
+        dataSource={linksInfo.map(l => ({ ...l, key: l.href }))}
+        rowKey={(record: any) => record.href}
+        pagination={{
+          current: currentLinkPage,
+          pageSize,
+          onChange: page => setLinkPage(page),
+          showSizeChanger: false,
+          showQuickJumper: false,
+          showTotal: (total, range) =>
+            `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
         }}
         size="small"
-        className="mt-2 text-center"
-        showSizeChanger={false}
-        showQuickJumper={false}
-        showTotal={(total, range) =>
-          `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
-        }
+        scroll={{ x: 400 }}
+        onChange={(pagination, filters) => {
+          setLinkPage(pagination.current || 1);
+          setColumnFilters(filters as Record<string, React.Key[] | null>);
+        }}
       />
     </div>
   );
