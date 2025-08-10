@@ -362,17 +362,14 @@ class AssignColorByBranch extends BaseTransform {
 // 按深度分配颜色（根节点灰，其余不同层级不同色）
 class AssignColorByDepth extends BaseTransform {
   static defaultOptions = {
-    colorsByDepth: [
-      "#BFBFBF", // depth 0 root
-      "#1783FF",
-      "#F08F56",
-      "#60C42D",
-      "#7863FF",
-      "#DB9D0D",
-      "#00C9C9",
-      "#FF80CA",
-      "#2491B3",
-      "#17C76F",
+    colorsByLevel: [
+      "#BFBFBF", // 虚拟根节点
+      "#1783FF", // H1 标题
+      "#F08F56", // H2 标题
+      "#60C42D", // H3 标题
+      "#7863FF", // H4 标题
+      "#DB9D0D", // H5 标题
+      "#00C9C9", // H6 标题
     ],
   } as any;
 
@@ -385,12 +382,39 @@ class AssignColorByDepth extends BaseTransform {
 
   beforeDraw(input: any) {
     const nodes = this.context.model.getNodeData();
-    nodes.forEach((node: any) => {
-      const depth = Math.max(0, node.depth || 0);
-      node.style ||= {};
-      node.style.color =
-        this.options.colorsByDepth[depth % this.options.colorsByDepth.length];
+    console.log("AssignColorByDepth: 开始分配颜色", {
+      nodesCount: nodes.length,
     });
+
+    nodes.forEach((node: any) => {
+      // 使用节点的 level 属性来分配颜色，而不是 depth
+      const level = node.level || 0;
+      node.style ||= {};
+
+      // 如果是虚拟根节点，使用灰色
+      if (node.id === "virtual-root") {
+        node.style.color = this.options.colorsByLevel[0];
+        console.log(`AssignColorByDepth: 根节点 ${node.id} 分配颜色`, {
+          color: this.options.colorsByLevel[0],
+          label: node.label,
+        });
+      } else {
+        // 根据标题级别分配颜色（H1=1, H2=2, H3=3, H4=4, H5=5, H6=6）
+        const colorIndex = Math.min(
+          level,
+          this.options.colorsByLevel.length - 1
+        );
+        node.style.color = this.options.colorsByLevel[colorIndex];
+        console.log(`AssignColorByDepth: 标题节点 ${node.id} 分配颜色`, {
+          level: level,
+          tag: node.label?.split(":")[0],
+          color: this.options.colorsByLevel[colorIndex],
+          label: node.label,
+        });
+      }
+    });
+
+    console.log("AssignColorByDepth: 颜色分配完成");
     return input;
   }
 }
@@ -496,83 +520,82 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
     const buildMindMapData = (headings: HeadingInfo[]) => {
       if (headings.length === 0) return null;
 
-      // 找到所有 H1 标题作为根节点
-      const h1Headings = headings.filter(h => h.level === 1);
+      console.log("HeadingMindMap: 开始构建标题树", { headings });
 
-      if (h1Headings.length === 0) {
-        // 如果没有 H1，使用第一个标题作为根节点
-        const rootHeading = headings[0];
-        return {
-          id: "root",
-          label: `${rootHeading.tag}: ${rootHeading.text}`,
-          collapsed: false, // 根节点默认展开
-          children: buildChildrenForParent(rootHeading, headings, 1),
-        };
+      // 测试用例：验证算法是否正确处理多个 H3 标题
+      const testCase =
+        headings.some(h => h.level === 3) &&
+        headings.filter(h => h.level === 3).length > 1;
+      if (testCase) {
+        console.log("HeadingMindMap: 检测到多个 H3 标题，验证算法", {
+          h3Count: headings.filter(h => h.level === 3).length,
+          h3Titles: headings.filter(h => h.level === 3).map(h => h.text),
+        });
       }
 
-      // 如果有多个 H1，创建多个根节点
-      if (h1Headings.length > 1) {
-        return {
-          id: "virtual-root",
-          label: "页面结构",
-          collapsed: false, // 虚拟根节点默认展开
-          children: h1Headings.map((h1, index) => ({
-            id: `root-${index}`,
-            label: `${h1.tag}: ${h1.text}`,
-            collapsed: false, // H1 默认展开
-            children: buildChildrenForParent(h1, headings, index + 1),
-          })),
-        };
-      }
-
-      // 单个 H1 的情况
-      const rootHeading = h1Headings[0];
-      return {
-        id: "root",
-        label: `${rootHeading.tag}: ${rootHeading.text}`,
-        collapsed: false, // H1 默认展开
-        children: buildChildrenForParent(rootHeading, headings, 1),
+      // 使用栈来维护当前标题层级路径
+      const stack: any[] = [];
+      const root = {
+        id: "virtual-root",
+        label: "页面结构",
+        collapsed: false,
+        children: [],
       };
-    };
 
-    // 为指定父节点构建子节点
-    const buildChildrenForParent = (
-      parentHeading: HeadingInfo,
-      allHeadings: HeadingInfo[],
-      parentIndex: number
-    ) => {
-      const children: any[] = [];
-      const parentLevel = parentHeading.level;
+      stack.push({ node: root, level: 0 });
 
-      // 找到当前标题在数组中的位置
-      const parentIndexInArray = allHeadings.findIndex(
-        h => h === parentHeading
-      );
+      headings.forEach((heading, index) => {
+        const currentNode = {
+          id: `heading-${index}`,
+          label: `${heading.tag}: ${heading.text}`,
+          level: heading.level,
+          collapsed: heading.level >= 4, // H4 及以上默认收缩
+          children: [],
+        };
 
-      // 查找直接子节点（下一级标题）
-      for (let i = parentIndexInArray + 1; i < allHeadings.length; i++) {
-        const heading = allHeadings[i];
-
-        // 如果遇到同级或更高级的标题，停止查找
-        if (heading.level <= parentLevel) {
-          break;
+        // 找到合适的父节点
+        while (
+          stack.length > 1 &&
+          stack[stack.length - 1].level >= heading.level
+        ) {
+          stack.pop();
         }
 
-        // 如果是直接子节点（只比父节点高一级）
-        if (heading.level === parentLevel + 1) {
-          const childNode = {
-            id: `heading-${parentIndex}-${i}`,
-            label: `${heading.tag}: ${heading.text}`,
-            level: heading.level,
-            collapsed: heading.level >= 3, // H3 及以上默认收缩
-            children: buildChildrenForParent(heading, allHeadings, i),
-          };
-          children.push(childNode);
-        }
+        // 将当前节点添加到父节点
+        const parent = stack[stack.length - 1];
+        parent.node.children.push(currentNode);
+
+        // 将当前节点推入栈中
+        stack.push({ node: currentNode, level: heading.level });
+
+        console.log(
+          `HeadingMindMap: 处理标题 ${heading.tag} (${heading.level})`,
+          {
+            text: heading.text,
+            parentLevel: parent.level,
+            stackDepth: stack.length,
+            parentLabel: parent.node.label,
+          }
+        );
+      });
+
+      console.log("HeadingMindMap: 构建完成的标题树", root);
+
+      // 验证结果：检查是否所有 H3 标题都在同一层级
+      if (testCase) {
+        const h3Nodes = root.children.filter((child: any) =>
+          child.label.startsWith("h3:")
+        );
+        console.log("HeadingMindMap: 验证结果 - H3 节点", {
+          h3NodesCount: h3Nodes.length,
+          h3Nodes: h3Nodes.map((n: any) => n.label),
+        });
       }
 
-      return children;
+      return root;
     };
+
+    // 移除旧的 buildChildrenForParent 函数，因为新的算法不需要它
 
     const data = buildMindMapData(headings);
 
