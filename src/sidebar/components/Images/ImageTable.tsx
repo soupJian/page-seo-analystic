@@ -120,7 +120,7 @@ const ImageTable: React.FC<ImageTableProps> = ({ imageInfo }) => {
           alt={record.alt || "图片"}
           width={60}
           height={60}
-          className="object-cover rounded"
+          className="object-contain rounded"
           preview={{
             mask: "点击预览",
             maskClassName: "rounded",

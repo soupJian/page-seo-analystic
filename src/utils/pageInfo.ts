@@ -128,11 +128,25 @@ export function getLinksInfo(): LinkInfo[] {
     const title = linkEl.getAttribute("title") || "";
     const rel = linkEl.getAttribute("rel") || "";
 
+    // 过滤掉无效链接
+    if (!href ||
+      href === "javascript:" ||
+      href === "void 0" ||
+      href === "undefined" ||
+      href === "null" ||
+      href.trim() === "" ||
+      href.startsWith("javascript:") ||
+      href.startsWith("void 0") ||
+      href.startsWith("undefined") ||
+      href.startsWith("null")) {
+      return;
+    }
+
     let type = "external";
     if (href.startsWith(window.location.origin)) {
       type = "internal";
     } else if (href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:") ||
-      href.startsWith("javascript:") || href.startsWith("ftp:") || href.startsWith("file:")) {
+      href.startsWith("ftp:") || href.startsWith("file:")) {
       type = "special";
     }
 

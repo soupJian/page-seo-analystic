@@ -382,9 +382,6 @@ class AssignColorByDepth extends BaseTransform {
 
   beforeDraw(input: any) {
     const nodes = this.context.model.getNodeData();
-    console.log("AssignColorByDepth: 开始分配颜色", {
-      nodesCount: nodes.length,
-    });
 
     nodes.forEach((node: any) => {
       // 使用节点的 level 属性来分配颜色，而不是 depth
@@ -394,10 +391,6 @@ class AssignColorByDepth extends BaseTransform {
       // 如果是虚拟根节点，使用灰色
       if (node.id === "virtual-root") {
         node.style.color = this.options.colorsByLevel[0];
-        console.log(`AssignColorByDepth: 根节点 ${node.id} 分配颜色`, {
-          color: this.options.colorsByLevel[0],
-          label: node.label,
-        });
       } else {
         // 根据标题级别分配颜色（H1=1, H2=2, H3=3, H4=4, H5=5, H6=6）
         const colorIndex = Math.min(
@@ -405,16 +398,9 @@ class AssignColorByDepth extends BaseTransform {
           this.options.colorsByLevel.length - 1
         );
         node.style.color = this.options.colorsByLevel[colorIndex];
-        console.log(`AssignColorByDepth: 标题节点 ${node.id} 分配颜色`, {
-          level: level,
-          tag: node.label?.split(":")[0],
-          color: this.options.colorsByLevel[colorIndex],
-          label: node.label,
-        });
       }
     });
 
-    console.log("AssignColorByDepth: 颜色分配完成");
     return input;
   }
 }
@@ -466,7 +452,20 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
   };
 
   const updateGraphViewport = () => {
-    if (!graphRef.current || !containerRef.current) return;
+    if (
+      !graphRef.current ||
+      !containerRef.current ||
+      typeof graphRef.current.destroy !== "function"
+    )
+      return;
+
+    // 检查图形是否已经渲染过
+    if (
+      !graphRef.current.getNodeData ||
+      graphRef.current.getNodeData().length === 0
+    )
+      return;
+
     const newWidth = containerRef.current.clientWidth;
     const newHeight = containerRef.current.clientHeight;
     try {
@@ -503,35 +502,26 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
   useEffect(() => {
     if (!containerRef.current || headings.length === 0) return;
 
-    console.log("HeadingMindMap: 开始渲染脑图", {
-      headingsCount: headings.length,
-    });
-
     // 清理之前的图形（加保护，避免内部插件未实例化时报错）
-    if (graphRef.current) {
+    if (graphRef.current && typeof graphRef.current.destroy === "function") {
       try {
-        graphRef.current.destroy?.();
+        // 检查图形是否已经渲染过
+        if (
+          graphRef.current.getNodeData &&
+          graphRef.current.getNodeData().length > 0
+        ) {
+          graphRef.current.destroy();
+        }
       } catch (e) {
         console.warn("HeadingMindMap: 销毁旧图形时发生错误，已忽略", e);
+      } finally {
+        graphRef.current = null;
       }
     }
 
     // 构建思维导图数据 - 按照层级结构构建，支持展开/收缩
     const buildMindMapData = (headings: HeadingInfo[]) => {
       if (headings.length === 0) return null;
-
-      console.log("HeadingMindMap: 开始构建标题树", { headings });
-
-      // 测试用例：验证算法是否正确处理多个 H3 标题
-      const testCase =
-        headings.some(h => h.level === 3) &&
-        headings.filter(h => h.level === 3).length > 1;
-      if (testCase) {
-        console.log("HeadingMindMap: 检测到多个 H3 标题，验证算法", {
-          h3Count: headings.filter(h => h.level === 3).length,
-          h3Titles: headings.filter(h => h.level === 3).map(h => h.text),
-        });
-      }
 
       // 使用栈来维护当前标题层级路径
       const stack: any[] = [];
@@ -567,30 +557,7 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
 
         // 将当前节点推入栈中
         stack.push({ node: currentNode, level: heading.level });
-
-        console.log(
-          `HeadingMindMap: 处理标题 ${heading.tag} (${heading.level})`,
-          {
-            text: heading.text,
-            parentLevel: parent.level,
-            stackDepth: stack.length,
-            parentLabel: parent.node.label,
-          }
-        );
       });
-
-      console.log("HeadingMindMap: 构建完成的标题树", root);
-
-      // 验证结果：检查是否所有 H3 标题都在同一层级
-      if (testCase) {
-        const h3Nodes = root.children.filter((child: any) =>
-          child.label.startsWith("h3:")
-        );
-        console.log("HeadingMindMap: 验证结果 - H3 节点", {
-          h3NodesCount: h3Nodes.length,
-          h3Nodes: h3Nodes.map((n: any) => n.label),
-        });
-      }
 
       return root;
     };
@@ -600,16 +567,12 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
     const data = buildMindMapData(headings);
 
     if (!data) {
-      console.log("HeadingMindMap: 没有数据可渲染");
       return;
     }
-
-    console.log("HeadingMindMap: 构建的数据", data);
 
     const rootId = data.id;
 
     // 配置图形 - 使用自定义组件
-    console.log("HeadingMindMap: 开始创建图形");
     const graph = new Graph({
       container: containerRef.current,
       width: containerRef.current?.clientWidth,
@@ -678,8 +641,6 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
       animation: false,
     } as any);
 
-    console.log("HeadingMindMap: 图形创建完成");
-
     try {
       graph.once(GraphEvent.AFTER_RENDER, () => {
         // 渲染后自适应：根据内容边界与容器大小自动缩放与居中
@@ -702,7 +663,6 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
       });
 
       graph.render();
-      console.log("HeadingMindMap: 脑图渲染成功");
     } catch (error) {
       console.error("HeadingMindMap: 脑图渲染失败", error);
     }
@@ -711,11 +671,19 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
 
     // 清理函数
     return () => {
-      if (graphRef.current) {
+      if (graphRef.current && typeof graphRef.current.destroy === "function") {
         try {
-          graphRef.current.destroy?.();
+          // 检查图形是否已经渲染过
+          if (
+            graphRef.current.getNodeData &&
+            graphRef.current.getNodeData().length > 0
+          ) {
+            graphRef.current.destroy();
+          }
         } catch (e) {
           console.warn("HeadingMindMap: 卸载时销毁图形发生错误，已忽略", e);
+        } finally {
+          graphRef.current = null;
         }
       }
     };
@@ -723,7 +691,18 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
 
   // 监听全屏状态变化，重新设置 canvas 尺寸和 scroller 配置
   useEffect(() => {
-    if (graphRef.current && containerRef.current) {
+    if (
+      graphRef.current &&
+      containerRef.current &&
+      typeof graphRef.current.destroy === "function"
+    ) {
+      // 检查图形是否已经渲染过
+      if (
+        !graphRef.current.getNodeData ||
+        graphRef.current.getNodeData().length === 0
+      )
+        return;
+
       const newWidth = containerRef.current.clientWidth;
       const newHeight = containerRef.current.clientHeight;
 
@@ -756,23 +735,52 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
 
   // 控制按钮事件处理
   const handleZoomIn = () => {
-    if (graphRef.current) {
-      const currentZoom = graphRef.current.getZoom();
-      const newZoom = Math.min(currentZoom * 1.2, 3); // 最大放大3倍
-      graphRef.current.zoomTo(newZoom);
+    if (graphRef.current && typeof graphRef.current.destroy === "function") {
+      // 检查图形是否已经渲染过
+      if (
+        !graphRef.current.getNodeData ||
+        graphRef.current.getNodeData().length === 0
+      )
+        return;
+
+      try {
+        const currentZoom = graphRef.current.getZoom();
+        const newZoom = Math.min(currentZoom * 1.2, 3); // 最大放大3倍
+        graphRef.current.zoomTo(newZoom);
+      } catch (error) {
+        console.warn("放大操作失败:", error);
+      }
     }
   };
 
   const handleZoomOut = () => {
-    if (graphRef.current) {
-      const currentZoom = graphRef.current.getZoom();
-      const newZoom = Math.max(currentZoom * 0.8, 0.1); // 最小缩小到0.1倍
-      graphRef.current.zoomTo(newZoom);
+    if (graphRef.current && typeof graphRef.current.destroy === "function") {
+      // 检查图形是否已经渲染过
+      if (
+        !graphRef.current.getNodeData ||
+        graphRef.current.getNodeData().length === 0
+      )
+        return;
+
+      try {
+        const currentZoom = graphRef.current.getZoom();
+        const newZoom = Math.max(currentZoom * 0.8, 0.1); // 最小缩小到0.1倍
+        graphRef.current.zoomTo(newZoom);
+      } catch (error) {
+        console.warn("缩小操作失败:", error);
+      }
     }
   };
 
   const handleReset = () => {
-    if (graphRef.current) {
+    if (graphRef.current && typeof graphRef.current.destroy === "function") {
+      // 检查图形是否已经渲染过
+      if (
+        !graphRef.current.getNodeData ||
+        graphRef.current.getNodeData().length === 0
+      )
+        return;
+
       try {
         // 重新布局并根据容器自适应缩放到初始居中
         graphRef.current.layout?.();
@@ -790,7 +798,9 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
           }
         }
         graphRef.current.fitView?.();
-      } catch {}
+      } catch (error) {
+        console.warn("重置操作失败:", error);
+      }
     }
   };
 
@@ -831,7 +841,15 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
 
       // 全屏状态下，阻止默认滚动并自己管理缩放
       e.preventDefault();
-      if (!graphRef.current) return;
+      if (!graphRef.current || typeof graphRef.current.destroy !== "function")
+        return;
+
+      // 检查图形是否已经渲染过
+      if (
+        !graphRef.current.getNodeData ||
+        graphRef.current.getNodeData().length === 0
+      )
+        return;
 
       try {
         const currentZoom = graphRef.current.getZoom?.() ?? 1;
