@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { Card, Space, Tag, Button, Empty } from "antd";
+import React, { useRef } from "react";
+import { Card, Space, Button, Empty } from "antd";
 import { LinkOutlined, ExportOutlined } from "@ant-design/icons";
 import { LinkInfo } from "../../../types";
-import LinkTable from "./LinkTable";
+import LinkTable, { LinkTableRef } from "./LinkTable";
 
 interface LinkSectionProps {
   linksInfo: LinkInfo[];
@@ -10,6 +10,18 @@ interface LinkSectionProps {
 }
 
 const LinkSection: React.FC<LinkSectionProps> = ({ linksInfo, onExport }) => {
+  const linkTableRef = useRef<LinkTableRef>(null);
+
+  const handleExport = () => {
+    if (linkTableRef.current) {
+      const currentData = linkTableRef.current.getCurrentDisplayData();
+      onExport(currentData, "links");
+    } else {
+      // 如果没有引用，导出原始数据
+      onExport(linksInfo, "links");
+    }
+  };
+
   return (
     <Card
       title={
@@ -25,7 +37,7 @@ const LinkSection: React.FC<LinkSectionProps> = ({ linksInfo, onExport }) => {
             type="link"
             size="small"
             icon={<ExportOutlined />}
-            onClick={() => onExport(linksInfo, "links")}
+            onClick={handleExport}
           >
             导出
           </Button>
@@ -33,7 +45,11 @@ const LinkSection: React.FC<LinkSectionProps> = ({ linksInfo, onExport }) => {
       }
     >
       {linksInfo.length > 0 ? (
-        <LinkTable linksInfo={linksInfo} onExport={onExport} />
+        <LinkTable
+          ref={linkTableRef}
+          linksInfo={linksInfo}
+          onExport={onExport}
+        />
       ) : (
         <Empty description="未找到链接" />
       )}

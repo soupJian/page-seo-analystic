@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Card, Space, Button, Empty } from "antd";
 import { PictureOutlined, ExportOutlined } from "@ant-design/icons";
 import { ImageInfo } from "../../../types";
-import ImageTable from "./ImageTable.tsx";
+import ImageTable, { ImageTableRef } from "./ImageTable.tsx";
 
 interface ImageSectionProps {
   imageInfo: ImageInfo[];
@@ -10,6 +10,18 @@ interface ImageSectionProps {
 }
 
 const ImageSection: React.FC<ImageSectionProps> = ({ imageInfo, onExport }) => {
+  const imageTableRef = useRef<ImageTableRef>(null);
+
+  const handleExport = () => {
+    if (imageTableRef.current) {
+      const currentData = imageTableRef.current.getCurrentDisplayData();
+      onExport(currentData, "images");
+    } else {
+      // 如果没有引用，导出原始数据
+      onExport(imageInfo, "images");
+    }
+  };
+
   return (
     <Card
       title={
@@ -25,7 +37,7 @@ const ImageSection: React.FC<ImageSectionProps> = ({ imageInfo, onExport }) => {
             type="link"
             size="small"
             icon={<ExportOutlined />}
-            onClick={() => onExport(imageInfo, "images")}
+            onClick={handleExport}
           >
             导出
           </Button>
@@ -33,7 +45,11 @@ const ImageSection: React.FC<ImageSectionProps> = ({ imageInfo, onExport }) => {
       }
     >
       {imageInfo.length > 0 ? (
-        <ImageTable imageInfo={imageInfo} />
+        <ImageTable
+          ref={imageTableRef}
+          imageInfo={imageInfo}
+          onExport={onExport}
+        />
       ) : (
         <Empty description="未找到图片" />
       )}
