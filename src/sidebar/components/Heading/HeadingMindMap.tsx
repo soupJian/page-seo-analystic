@@ -591,8 +591,8 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
       container: containerRef.current,
       width: containerRef.current?.clientWidth,
       height: containerRef.current?.clientHeight,
-      // 统一启用 scroller，避免在销毁时因插件未创建导致的 destroy 报错
-      scroller: true,
+      // 根据全屏状态动态启用 scroller，非全屏时禁用以保持外层滚动
+      scroller: isFullscreen,
       data: treeToGraphData(data),
       node: {
         type: "mindmap",
@@ -696,9 +696,9 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
         }
       }
     };
-  }, [headings, width, height]);
+  }, [headings, width, height, isFullscreen]);
 
-  // 监听全屏状态变化，重新设置 canvas 尺寸
+  // 监听全屏状态变化，重新设置 canvas 尺寸和 scroller 配置
   useEffect(() => {
     if (graphRef.current && containerRef.current) {
       const newWidth = containerRef.current.clientWidth;
@@ -712,6 +712,11 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
           graphRef.current.changeSize(newWidth, newHeight);
         } else {
           console.log("无法更新图形尺寸，只重新居中");
+        }
+
+        // 更新 scroller 配置
+        if (graphRef.current.updateOptions) {
+          graphRef.current.updateOptions({ scroller: isFullscreen });
         }
 
         // 重新居中
@@ -798,9 +803,12 @@ const HeadingMindMap: React.FC<HeadingMindMapProps> = ({
     if (!wrapper) return;
 
     const handleWheel = (e: WheelEvent) => {
-      // 统一拦截，自己管理缩放
+      // 在非全屏状态下，不阻止默认滚动，让滚轮事件传播到外层
+      if (!isFullscreen) return;
+
+      // 全屏状态下，阻止默认滚动并自己管理缩放
       e.preventDefault();
-      if (!graphRef.current || !isFullscreen) return;
+      if (!graphRef.current) return;
 
       try {
         const currentZoom = graphRef.current.getZoom?.() ?? 1;
