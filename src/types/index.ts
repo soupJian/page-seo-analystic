@@ -104,7 +104,6 @@ export interface OfferInfo {
 
 export interface AnalyticsInfo {
   name: string;
-  id: string;
   type: string;
   found: boolean;
 }
@@ -188,7 +187,6 @@ export interface PageAnalysisData {
   }>;
   analyticsInfo: Array<{
     name: string;
-    id: string;
     type: string;
     found: boolean;
   }>;
